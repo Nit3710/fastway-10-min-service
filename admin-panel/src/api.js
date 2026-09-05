@@ -8,6 +8,8 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  config.headers['pinggy-skip-browser-warning'] = 'true';
+  config.headers['bypass-tunnel-reminder'] = 'true';
   return config;
 });
 
