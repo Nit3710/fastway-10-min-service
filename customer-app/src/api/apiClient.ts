@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from 'axios';
 import useAuthStore from '../store/authStore';
 
 export const CONFIG = {
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080',
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'https://fastway-10-min-service.onrender.com',
 };
 
 const http = axios.create({ baseURL: CONFIG.API_BASE_URL });
