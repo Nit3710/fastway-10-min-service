@@ -2,14 +2,12 @@ import axios from 'axios';
 import { showToast, apiErrorMessage } from './toast';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://zjfhh-2401-4900-463a-1ee2-4dd1-650a-2d86-c9ac.free.pinggy.net',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://fastway-10-min-service.onrender.com',
 });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  config.headers['pinggy-skip-browser-warning'] = 'true';
-  config.headers['bypass-tunnel-reminder'] = 'true';
   return config;
 });
 
