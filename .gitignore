@@ -1,0 +1,59 @@
+# Dependency directories across all projects
+**/node_modules/
+node_modules/
+
+# Build and distribution outputs
+**/dist/
+**/dist-ssr/
+**/build/
+**/.expo/
+**/target/
+**/bin/
+**/out/
+
+# Secret & Private Configuration Files (DO NOT COMMIT)
+config/application-local.properties
+config/firebase-service-account.json
+config/*.json
+!config/readme.md
+*.pem
+*.key
+*.keystore
+*.p12
+
+# Environment variables files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Runtime Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# IDE & Editor files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Agent & Temp directories
+.gemini/
+scratch/
+uploads/

@@ -1,0 +1,6 @@
+pincode,delivery_charge,is_active
+110001,45.00,true
+110002,50.00,true
+400001,60.00,true
+400002,0.00,true
+560001,40.00,false

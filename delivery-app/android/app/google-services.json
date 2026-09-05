@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "343830613593",
+    "firebase_url": "https://web-scrap-9675e-default-rtdb.firebaseio.com",
+    "project_id": "web-scrap-9675e",
+    "storage_bucket": "web-scrap-9675e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:343830613593:android:a140a71ff0832d85132b48",
+        "android_client_info": {
+          "package_name": "com.fastwaydeliveryapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOJKnWuWuKoqyCFevDO4gEKiTHiGr0oI0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
