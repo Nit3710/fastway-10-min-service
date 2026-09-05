@@ -2,7 +2,7 @@ import axios from 'axios';
 import { showToast, apiErrorMessage } from './toast';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://abfc5d81963e70.lhr.life',
 });
 
 api.interceptors.request.use((config) => {

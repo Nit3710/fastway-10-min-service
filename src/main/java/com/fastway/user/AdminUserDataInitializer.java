@@ -16,18 +16,40 @@ public class AdminUserDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        String adminPhone = "8888888888";
-        if (userRepository.findByPhone(adminPhone).isEmpty()) {
-            log.info("Seeding default admin user with phone: {}", adminPhone);
+        // Seed default admin 8888888888
+        String adminPhone1 = "8888888888";
+        if (userRepository.findByPhone(adminPhone1).isEmpty()) {
+            log.info("Seeding default admin user with phone: {}", adminPhone1);
             User admin = User.builder()
                     .name("System Admin")
-                    .phone(adminPhone)
+                    .phone(adminPhone1)
                     .email("admin@fastway.com")
                     .passwordHash(passwordEncoder.encode("Test@123"))
                     .role(UserRole.ADMIN)
                     .build();
             userRepository.save(admin);
-            log.info("Default admin user created successfully.");
         }
+
+        // Seed/Ensure 9999999996 as Admin user
+        String adminPhone2 = "9999999996";
+        userRepository.findByPhone(adminPhone2).ifPresentOrElse(
+            existingUser -> {
+                existingUser.setRole(UserRole.ADMIN);
+                existingUser.setPasswordHash(passwordEncoder.encode("Test@123"));
+                userRepository.save(existingUser);
+                log.info("Updated existing user {} to ADMIN role.", adminPhone2);
+            },
+            () -> {
+                log.info("Seeding admin user with phone: {}", adminPhone2);
+                User admin2 = User.builder()
+                        .name("Fastway Admin")
+                        .phone(adminPhone2)
+                        .email("admin2@fastway.com")
+                        .passwordHash(passwordEncoder.encode("Test@123"))
+                        .role(UserRole.ADMIN)
+                        .build();
+                userRepository.save(admin2);
+            }
+        );
     }
 }
