@@ -29,6 +29,7 @@ public class DeliveryAssignmentResponse {
     private String customerPhone;
     private AddressResponse deliveryAddress;
     private List<OrderItemResponse> orderItems;
+    private String deliveryOtp;
 
     public static DeliveryAssignmentResponse fromEntity(DeliveryAssignment assignment) {
         if (assignment == null) return null;
@@ -64,6 +65,7 @@ public class DeliveryAssignmentResponse {
                 .customerPhone(assignment.getOrder().getUser().getPhone())
                 .deliveryAddress(addressResp)
                 .orderItems(items)
+                .deliveryOtp(assignment.getOrder().getDeliveryOtp())
                 .build();
     }
 }

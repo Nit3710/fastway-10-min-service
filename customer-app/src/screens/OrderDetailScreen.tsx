@@ -580,6 +580,21 @@ export const OrderDetailScreen: React.FC = () => {
             </View>
           )}
 
+          {order.deliveryOtp && order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
+            <View style={styles.otpCard}>
+              <View style={styles.otpHeader}>
+                <Icon name="shield-key" size={22} color={THEME.colors.primary} />
+                <Text style={styles.otpTitle}>DELIVERY PIN / OTP</Text>
+              </View>
+              <View style={styles.otpBadge}>
+                <Text style={styles.otpCode}>{order.deliveryOtp}</Text>
+              </View>
+              <Text style={styles.otpNote}>
+                Share this 4-digit PIN with the delivery partner upon arrival to receive your package.
+              </Text>
+            </View>
+          )}
+
           {/* Stepper Timeline */}
           {renderTimeline()}
 
@@ -794,6 +809,47 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: THEME.colors.primary,
     ...THEME.shadows.light 
+  },
+  otpCard: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: THEME.borderRadius.md,
+    padding: THEME.spacing.md,
+    marginBottom: THEME.spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFA000',
+    ...THEME.shadows.light,
+  },
+  otpHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: THEME.spacing.xs,
+  },
+  otpTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#E65100',
+    marginLeft: 6,
+    letterSpacing: 0.5,
+  },
+  otpBadge: {
+    backgroundColor: '#FF6F00',
+    paddingVertical: 6,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginVertical: 4,
+  },
+  otpCode: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 6,
+  },
+  otpNote: {
+    fontSize: 11,
+    color: '#F57F17',
+    textAlign: 'center',
+    marginTop: 4,
   },
   iconCircleWrap: {
     width: 38,

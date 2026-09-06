@@ -33,4 +33,5 @@ public class OrderResponse {
     private String couponCode;
     private Integer loyaltyPointsEarned;
     private Integer loyaltyPointsDeducted;
+    private String deliveryOtp;
 }

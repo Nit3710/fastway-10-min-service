@@ -52,9 +52,26 @@ public class DeliveryController {
             @Valid @RequestBody StatusUpdateRequest request
     ) {
         DeliveryAssignmentResponse response = deliveryService.updateAssignmentStatus(
-                userDetails.getUser().getId(), id, request.getStatus()
+                userDetails.getUser().getId(), id, request.getStatus(), request.getOtp()
         );
         return ResponseEntity.ok(ApiResponse.success(response, "Assignment status updated successfully"));
+    }
+
+    @GetMapping("/duty-status")
+    public ResponseEntity<ApiResponse<Boolean>> getDutyStatus(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Boolean status = deliveryService.getDutyStatus(userDetails.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success(status, "Duty status retrieved successfully"));
+    }
+
+    @PutMapping("/duty-status")
+    public ResponseEntity<ApiResponse<Boolean>> updateDutyStatus(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam Boolean isAvailable
+    ) {
+        deliveryService.updateDutyStatus(userDetails.getUser().getId(), isAvailable);
+        return ResponseEntity.ok(ApiResponse.success(isAvailable, "Duty status updated successfully"));
     }
 
     @PutMapping("/location")

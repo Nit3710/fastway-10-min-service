@@ -86,6 +86,9 @@ public class Order {
     @Builder.Default
     private Integer loyaltyPointsDeducted = 0;
 
+    @Column(name = "delivery_otp", length = 6)
+    private String deliveryOtp;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -98,6 +101,9 @@ public class Order {
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
+        }
+        if (this.deliveryOtp == null || this.deliveryOtp.isBlank()) {
+            this.deliveryOtp = String.format("%04d", new java.util.Random().nextInt(10000));
         }
     }
 }

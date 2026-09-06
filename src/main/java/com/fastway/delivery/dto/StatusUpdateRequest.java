@@ -8,4 +8,5 @@ import lombok.Data;
 public class StatusUpdateRequest {
     @NotNull(message = "Status is required")
     private DeliveryAssignmentStatus status;
+    private String otp;
 }

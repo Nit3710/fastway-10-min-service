@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   Linking,
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -15,10 +16,11 @@ import {
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getAssignmentDetails, updateAssignmentStatus } from '../api/deliveryApi';
-import { DeliveryAssignment, RootStackParamList } from '../types';
+import { DeliveryAssignment, DeliveryAssignmentStatus, RootStackParamList } from '../types';
 import { useToastStore } from '../store/toastStore';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import Input from '../components/Input';
 import THEME from '../theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -36,6 +38,9 @@ export const AssignmentDetailScreen: React.FC = () => {
   const [assignment, setAssignment] = useState<DeliveryAssignment | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [otpModalVisible, setOtpModalVisible] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
+  const [otpError, setOtpError] = useState<string | undefined>(undefined);
 
   const fetchDetails = async () => {
     setLoading(true);
@@ -58,7 +63,6 @@ export const AssignmentDetailScreen: React.FC = () => {
     if (!assignment) return;
     const { latitude, longitude, addressLine, city } = assignment.deliveryAddress;
     
-    // Choose between coordinate search and query text search
     let url = '';
     if (latitude && longitude && latitude !== 0 && longitude !== 0) {
       url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
@@ -91,54 +95,40 @@ export const AssignmentDetailScreen: React.FC = () => {
       .catch((err: any) => console.error('An error occurred calling customer', err));
   };
 
+  const executeStatusUpdate = async (nextStatus: DeliveryAssignmentStatus, otp?: string) => {
+    if (!assignment) return;
+    setActionLoading(true);
+    try {
+      const updated = await updateAssignmentStatus(assignment.id, nextStatus, otp);
+      setAssignment(updated);
+      showToast(`Status updated to ${nextStatus.replace('_', ' ')}`, 'success');
+      setOtpModalVisible(false);
+      if (nextStatus === 'DELIVERED') {
+        navigation.goBack();
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Failed to update status';
+      if (nextStatus === 'DELIVERED') {
+        setOtpError(msg);
+      }
+      showToast(msg, 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleStatusTransition = async () => {
     if (!assignment) return;
     const currentStatus = assignment.status;
 
-    let nextStatus: typeof assignment.status | null = null;
-    let confirmTitle = '';
-    let confirmMsg = '';
-
     if (currentStatus === 'ASSIGNED') {
-      nextStatus = 'PICKED_UP';
+      await executeStatusUpdate('PICKED_UP');
     } else if (currentStatus === 'PICKED_UP') {
-      nextStatus = 'OUT_FOR_DELIVERY';
+      await executeStatusUpdate('OUT_FOR_DELIVERY');
     } else if (currentStatus === 'OUT_FOR_DELIVERY') {
-      nextStatus = 'DELIVERED';
-      confirmTitle = 'Confirm Delivery';
-      confirmMsg = 'Are you sure you want to mark this order as successfully delivered? This will complete the order and finalize payment.';
-    }
-
-    if (!nextStatus) return;
-
-    const executeUpdate = async () => {
-      setActionLoading(true);
-      try {
-        const updated = await updateAssignmentStatus(assignment.id, nextStatus!);
-        setAssignment(updated);
-        showToast(`Status updated to ${nextStatus!.replace('_', ' ')}`, 'success');
-        if (nextStatus === 'DELIVERED') {
-          navigation.goBack();
-        }
-      } catch (err: any) {
-        showToast(err.message || 'Failed to update assignment status', 'error');
-      } finally {
-        setActionLoading(false);
-      }
-    };
-
-    if (confirmTitle) {
-      Alert.alert(
-        confirmTitle,
-        confirmMsg,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Delivered', onPress: executeUpdate, style: 'default' },
-        ],
-        { cancelable: true }
-      );
-    } else {
-      await executeUpdate();
+      setOtpInput('');
+      setOtpError(undefined);
+      setOtpModalVisible(true);
     }
   };
 
@@ -254,6 +244,55 @@ export const AssignmentDetailScreen: React.FC = () => {
           />
         </View>
       )}
+
+      {/* OTP Verification Modal */}
+      <Modal
+        visible={otpModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOtpModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Icon name="shield-key-outline" size={36} color={THEME.colors.primary} />
+              <Text style={styles.modalTitle}>Enter Delivery OTP</Text>
+              <Text style={styles.modalSubtitle}>
+                Ask customer for the 4-digit PIN displayed on their app/SMS to confirm delivery.
+              </Text>
+            </View>
+
+            <Input
+              label="4-DIGIT DELIVERY PIN"
+              placeholder="e.g. 4821"
+              keyboardType="number-pad"
+              maxLength={4}
+              value={otpInput}
+              onChangeText={(text: string) => {
+                setOtpInput(text);
+                setOtpError(undefined);
+              }}
+              error={otpError}
+            />
+
+            <View style={styles.modalActions}>
+              <Button
+                title="Cancel"
+                variant="outline"
+                onPress={() => setOtpModalVisible(false)}
+                style={{ flex: 1, marginRight: THEME.spacing.sm }}
+              />
+              <Button
+                title="Verify & Complete"
+                onPress={() => executeStatusUpdate('DELIVERED', otpInput)}
+                isLoading={actionLoading}
+                disabled={otpInput.length < 4}
+                style={{ flex: 1, marginLeft: THEME.spacing.sm }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -403,6 +442,40 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     height: 52,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: THEME.spacing.lg,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: THEME.colors.surface,
+    borderRadius: THEME.borderRadius.lg,
+    padding: THEME.spacing.xl,
+    elevation: 5,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: THEME.spacing.lg,
+  },
+  modalTitle: {
+    ...THEME.typography.h2,
+    fontWeight: '800',
+    color: THEME.colors.text,
+    marginTop: THEME.spacing.xs,
+  },
+  modalSubtitle: {
+    ...THEME.typography.caption,
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: THEME.spacing.xs,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    marginTop: THEME.spacing.lg,
   },
 });
 

@@ -14,7 +14,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/authStore';
 import { useToastStore } from '../store/toastStore';
-import { getAssignments } from '../api/deliveryApi';
+import { getAssignments, getDutyStatus, updateDutyStatus } from '../api/deliveryApi';
 import { apiLogout } from '../api/authApi';
 import { DeliveryAssignment, RootStackParamList } from '../types';
 import { useLocationTracking } from '../hooks/useLocationTracking';
@@ -36,28 +36,40 @@ export const AssignmentListScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [hasActiveAssignment, setHasActiveAssignment] = useState(false);
+  const [isOnDuty, setIsOnDuty] = useState(true);
+  const [dutyLoading, setDutyLoading] = useState(false);
 
   // Hook into location tracking using status calculated from backend responses
   const { isTracking, errorMsg: locationError } = useLocationTracking(hasActiveAssignment);
 
+  const fetchDuty = async () => {
+    try {
+      const status = await getDutyStatus();
+      setIsOnDuty(status);
+    } catch (e) {}
+  };
+
+  const handleToggleDuty = async () => {
+    setDutyLoading(true);
+    try {
+      const nextStatus = !isOnDuty;
+      await updateDutyStatus(nextStatus);
+      setIsOnDuty(nextStatus);
+      showToast(nextStatus ? 'You are now On Duty 🟢' : 'You are now Off Duty 🔴', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update duty status', 'error');
+    } finally {
+      setDutyLoading(false);
+    }
+  };
+
   const fetchAssignments = async (isRefreshing = false) => {
     if (!isRefreshing) setLoading(true);
     try {
-      // Fetch active or completed delivery tasks
-      const statusFilter = undefined; // Fetch all and filter client side, or query from API
-      // Since API filters by status, we can query both tabs or fetch active vs completed.
-      // Let's query based on active tab status or download page content.
-      // The API supports passing a specific status. If we pass statusFilter:
-      // Active tab: ASSIGNED, PICKED_UP, OUT_FOR_DELIVERY
-      // Completed tab: DELIVERED
-      // Let's query all assignments and separate them, or fetch page by page.
-      // Fetching all (unpaged/large size) is easiest to calculate if there's any active task!
       const result = await getAssignments(undefined, 0, 50);
-      
       const list = result.content;
       setAssignments(list);
 
-      // Check if there's at least one active assignment in the fetched dataset
       const activeExists = list.some(
         (a) =>
           a.status === 'ASSIGNED' ||
@@ -75,6 +87,7 @@ export const AssignmentListScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
+      fetchDuty();
       fetchAssignments();
     }, [activeTab])
   );
@@ -158,9 +171,14 @@ export const AssignmentListScreen: React.FC = () => {
           <Text style={styles.headerTitle}>Fastway Delivery</Text>
           <Text style={styles.headerSubtitle}>Welcome, {user?.name || 'Partner'}</Text>
         </View>
-        <Pressable onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Pressable onPress={handleToggleDuty} disabled={dutyLoading} style={[styles.dutyBtn, isOnDuty ? styles.dutyOn : styles.dutyOff]}>
+            <Text style={styles.dutyText}>{isOnDuty ? '🟢 On Duty' : '🔴 Off Duty'}</Text>
+          </Pressable>
+          <Pressable onPress={handleLogout} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Tracker Status Indicator */}
@@ -260,6 +278,23 @@ const styles = StyleSheet.create({
     color: THEME.colors.primaryLight,
     marginTop: 2,
     fontWeight: '600',
+  },
+  dutyBtn: {
+    paddingVertical: THEME.spacing.xs,
+    paddingHorizontal: THEME.spacing.sm,
+    borderRadius: THEME.borderRadius.sm,
+    marginRight: THEME.spacing.sm,
+  },
+  dutyOn: {
+    backgroundColor: '#1B5E20',
+  },
+  dutyOff: {
+    backgroundColor: '#B71C1C',
+  },
+  dutyText: {
+    fontSize: 11,
+    color: '#FFFFFF',
+    fontWeight: '800',
   },
   logoutBtn: {
     paddingVertical: THEME.spacing.xs,

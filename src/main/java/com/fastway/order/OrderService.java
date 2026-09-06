@@ -423,6 +423,7 @@ public class OrderService {
                 .couponCode(order.getCouponCode())
                 .loyaltyPointsEarned(order.getLoyaltyPointsEarned())
                 .loyaltyPointsDeducted(order.getLoyaltyPointsDeducted())
+                .deliveryOtp(order.getDeliveryOtp())
                 .build();
     }
 }

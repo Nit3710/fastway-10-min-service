@@ -62,6 +62,7 @@ export interface DeliveryAssignment {
   customerPhone: string;
   deliveryAddress: UserAddress;
   orderItems: OrderItemResponse[];
+  deliveryOtp?: string | null;
 }
 
 export type RootStackParamList = {

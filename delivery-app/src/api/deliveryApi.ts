@@ -21,11 +21,12 @@ export const getAssignmentDetails = async (id: number): Promise<DeliveryAssignme
 
 export const updateAssignmentStatus = async (
   id: number,
-  status: DeliveryAssignmentStatus
+  status: DeliveryAssignmentStatus,
+  otp?: string
 ): Promise<DeliveryAssignment> => {
   return await apiFetch<DeliveryAssignment>(`/api/delivery/assignments/${id}/status`, {
     method: 'PUT',
-    body: { status },
+    body: { status, otp },
   });
 };
 
@@ -33,5 +34,15 @@ export const updateDeliveryLocation = async (lat: number, lng: number): Promise<
   await apiFetch<void>('/api/delivery/location', {
     method: 'PUT',
     body: { lat, lng },
+  });
+};
+
+export const getDutyStatus = async (): Promise<boolean> => {
+  return await apiFetch<boolean>('/api/delivery/duty-status');
+};
+
+export const updateDutyStatus = async (isAvailable: boolean): Promise<boolean> => {
+  return await apiFetch<boolean>(`/api/delivery/duty-status?isAvailable=${isAvailable}`, {
+    method: 'PUT',
   });
 };

@@ -116,7 +116,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     @Override
     @Transactional
     public DeliveryAssignmentResponse updateAssignmentStatus(Long userId, Long assignmentId,
-            DeliveryAssignmentStatus nextStatus) {
+            DeliveryAssignmentStatus nextStatus, String otp) {
         DeliveryAssignment assignment = deliveryAssignmentRepository.findById(assignmentId)
                 .orElseThrow(
                         () -> new ResourceNotFoundException("Delivery assignment not found with id: " + assignmentId));
@@ -134,22 +134,28 @@ public class DeliveryServiceImpl implements DeliveryService {
                     "Invalid assignment status transition from " + currentStatus + " to " + nextStatus);
         }
 
-        assignment.setStatus(nextStatus);
         Order order = assignment.getOrder();
 
-        if (nextStatus == DeliveryAssignmentStatus.PICKED_UP) {
+        if (nextStatus == DeliveryAssignmentStatus.DELIVERED) {
+            String expectedOtp = order.getDeliveryOtp();
+            if (expectedOtp != null && !expectedOtp.isBlank()) {
+                if (otp == null || !otp.trim().equalsIgnoreCase(expectedOtp.trim())) {
+                    throw new IllegalArgumentException("Invalid Delivery OTP. Please enter the correct 4-digit PIN provided by the customer.");
+                }
+            }
+            assignment.setDeliveredAt(LocalDateTime.now());
+            order.setStatus(OrderStatus.DELIVERED);
+            order.setPaymentStatus(PaymentStatus.PAID);
+        } else if (nextStatus == DeliveryAssignmentStatus.PICKED_UP) {
             assignment.setPickedUpAt(LocalDateTime.now());
             order.setStatus(OrderStatus.PACKED);
         } else if (nextStatus == DeliveryAssignmentStatus.OUT_FOR_DELIVERY) {
             order.setStatus(OrderStatus.OUT_FOR_DELIVERY);
-        } else if (nextStatus == DeliveryAssignmentStatus.DELIVERED) {
-            assignment.setDeliveredAt(LocalDateTime.now());
-            order.setStatus(OrderStatus.DELIVERED);
-            order.setPaymentStatus(PaymentStatus.PAID);
         } else if (nextStatus == DeliveryAssignmentStatus.CANCELLED) {
             order.setStatus(OrderStatus.CANCELLED);
         }
 
+        assignment.setStatus(nextStatus);
         orderRepository.save(order);
         DeliveryAssignment updated = deliveryAssignmentRepository.save(assignment);
 
@@ -162,14 +168,14 @@ public class DeliveryServiceImpl implements DeliveryService {
             if (nextStatus == DeliveryAssignmentStatus.OUT_FOR_DELIVERY) {
                 notificationService.sendToUser(
                         order.getUser().getId(),
-                        "Order Out for Delivery",
-                        "Your order #FW-" + order.getId() + " is out for delivery. Our partner is on the way!",
+                        "Order Out for Delivery 🛵",
+                        "Your order #FW-" + order.getId() + " is out for delivery. Share OTP " + order.getDeliveryOtp() + " with rider upon arrival!",
                         "ORDER",
                         order.getId());
             } else if (nextStatus == DeliveryAssignmentStatus.DELIVERED) {
                 notificationService.sendToUser(
                         order.getUser().getId(),
-                        "Order Delivered",
+                        "Order Delivered 🎉",
                         "Your order #FW-" + order.getId() + " has been successfully delivered. Thank you!",
                         "ORDER",
                         order.getId());
@@ -179,6 +185,23 @@ public class DeliveryServiceImpl implements DeliveryService {
         }
 
         return DeliveryAssignmentResponse.fromEntity(updated);
+    }
+
+    @Override
+    @Transactional
+    public void updateDutyStatus(Long userId, Boolean isAvailable) {
+        DeliveryPartner partner = deliveryPartnerRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery partner details not found for user: " + userId));
+        partner.setIsAvailable(isAvailable != null ? isAvailable : true);
+        deliveryPartnerRepository.save(partner);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Boolean getDutyStatus(Long userId) {
+        return deliveryPartnerRepository.findByUserId(userId)
+                .map(DeliveryPartner::getIsAvailable)
+                .orElse(true);
     }
 
     @Override
