@@ -13,6 +13,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Serve uploaded product images from the 'uploads/' directory at /uploads/**
         String uploadsDir = Paths.get(System.getProperty("user.dir"), "uploads").toAbsolutePath().toUri().toString();
+        if (!uploadsDir.endsWith("/")) {
+            uploadsDir += "/";
+        }
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadsDir);
     }

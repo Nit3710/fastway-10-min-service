@@ -72,14 +72,16 @@ public class ProductImageStorageService {
         java.io.File dest = new java.io.File(uploadDir, fileName);
         file.transferTo(dest.getAbsoluteFile());
         
+        String rawUrl;
         try {
-            return org.springframework.web.servlet.support.ServletUriComponentsBuilder
+            rawUrl = org.springframework.web.servlet.support.ServletUriComponentsBuilder
                     .fromCurrentContextPath()
                     .build()
                     .toUriString() + "/uploads/" + fileName;
         } catch (Exception e) {
-            return "http://10.131.176.36:8080/uploads/" + fileName;
+            rawUrl = "https://fastway-10-min-service.onrender.com/uploads/" + fileName;
         }
+        return com.fastway.common.util.ImageUrlUtil.normalizeUrl(rawUrl);
     }
     private void validate(MultipartFile file) { if (file == null || file.isEmpty()) throw new IllegalArgumentException("Image file is required"); if (file.getSize() > MAX_BYTES) throw new IllegalArgumentException("Image must be 5MB or smaller"); String type=file.getContentType()==null?"":file.getContentType().toLowerCase(Locale.ROOT); if(!ALLOWED_TYPES.contains(type)||!ALLOWED_EXTENSIONS.contains(extension(file.getOriginalFilename())))throw new IllegalArgumentException("Only JPG, PNG, and WEBP images are allowed"); }
     private String extension(String name){return name==null||!name.contains(".")?"":name.substring(name.lastIndexOf('.')+1).toLowerCase(Locale.ROOT);}

@@ -119,7 +119,7 @@ public class CategoryService {
         return CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())
-                .imageUrl(category.getImageUrl())
+                .imageUrl(com.fastway.common.util.ImageUrlUtil.normalizeUrl(category.getImageUrl()))
                 .parentCategoryId(category.getParentCategory() != null ? category.getParentCategory().getId() : null)
                 .subCategories(subResponses)
                 .build();

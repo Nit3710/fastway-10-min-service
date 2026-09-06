@@ -50,7 +50,7 @@ public class BrandService {
         return BrandResponse.builder()
                 .id(brand.getId())
                 .name(brand.getName())
-                .logoUrl(brand.getLogoUrl())
+                .logoUrl(com.fastway.common.util.ImageUrlUtil.normalizeUrl(brand.getLogoUrl()))
                 .build();
     }
 }
