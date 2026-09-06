@@ -4,6 +4,8 @@ import com.fastway.catalog.dto.BrandRequest;
 import com.fastway.catalog.dto.BrandResponse;
 import com.fastway.common.security.TextSanitizer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ public class BrandService {
     private final BrandRepository brandRepository;
     private final TextSanitizer textSanitizer;
 
+    @Cacheable(value = "brands")
     @Transactional(readOnly = true)
     public List<BrandResponse> getAllBrands() {
         return brandRepository.findAll().stream()
@@ -24,6 +27,7 @@ public class BrandService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "brands", allEntries = true)
     @Transactional
     public BrandResponse createBrand(BrandRequest request) {
         if (brandRepository.findByName(request.getName()).isPresent()) {

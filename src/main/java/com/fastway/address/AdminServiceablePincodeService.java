@@ -2,6 +2,7 @@ package com.fastway.address;
 
 import com.fastway.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,12 +22,14 @@ public class AdminServiceablePincodeService {
         return repository.findByPincodeContaining(search == null ? "" : search.trim(), pageable);
     }
 
+    @CacheEvict(value = "pincodes", allEntries = true)
     public ServiceablePincode create(String pincode, BigDecimal charge, Boolean active) {
         String code = normalize(pincode); validate(code, charge);
         if (repository.existsById(code)) throw new IllegalArgumentException("Pincode already exists: " + code);
         return repository.save(ServiceablePincode.builder().pincode(code).deliveryCharge(charge).isActive(active == null || active).build());
     }
 
+    @CacheEvict(value = "pincodes", allEntries = true)
     public ServiceablePincode update(String pincode, BigDecimal charge, Boolean active) {
         ServiceablePincode zone = repository.findById(normalize(pincode)).orElseThrow(() -> new ResourceNotFoundException("Serviceable pincode not found"));
         if (charge != null) { if (charge.signum() < 0) throw new IllegalArgumentException("Delivery charge cannot be negative"); zone.setDeliveryCharge(charge); }
@@ -34,11 +37,13 @@ public class AdminServiceablePincodeService {
         return repository.save(zone);
     }
 
+    @CacheEvict(value = "pincodes", allEntries = true)
     public void deactivate(String pincode) {
         ServiceablePincode zone = repository.findById(normalize(pincode)).orElseThrow(() -> new ResourceNotFoundException("Serviceable pincode not found"));
         zone.setIsActive(false); repository.save(zone);
     }
 
+    @CacheEvict(value = "pincodes", allEntries = true)
     public Map<String, Object> bulkUpload(MultipartFile file) throws Exception {
         if (file == null || file.isEmpty()) throw new IllegalArgumentException("CSV file is required");
         List<Map<String, Object>> failures = new ArrayList<>(); int succeeded = 0, row = 1;

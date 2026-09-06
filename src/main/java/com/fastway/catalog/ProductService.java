@@ -7,6 +7,8 @@ import com.fastway.catalog.dto.BrandResponse;
 import com.fastway.common.exception.ResourceNotFoundException;
 import com.fastway.common.security.TextSanitizer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +32,7 @@ public class ProductService {
     private final AddressRepository addressRepository;
     private final WarehouseService warehouseService;
 
+    @Cacheable(value = "products", key = "{#page, #size, #categoryId, #brandId, #minPrice, #maxPrice, #search, #addressId, #sortBy, #sortDir}")
     @Transactional(readOnly = true)
     public Page<ProductResponse> getFilteredProducts(
             int page,
@@ -62,6 +65,7 @@ public class ProductService {
         return productPage.map(p -> { ProductResponse r=convertToResponse(p); if(addressId!=null && !warehouseService.hasStock(p.getId(),address)) r.setStockQty(0); return r; });
     }
 
+    @Cacheable(value = "products", key = "'id_' + #id")
     @Transactional(readOnly = true)
     public ProductResponse getProductById(Long id) {
         Product product = productRepository.findWithCategoryAndBrandById(id)
@@ -72,6 +76,7 @@ public class ProductService {
         return convertToResponse(product);
     }
 
+    @CacheEvict(value = "products", allEntries = true)
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
         String cleanSku = textSanitizer.clean(request.getSku());
@@ -105,6 +110,7 @@ public class ProductService {
         return convertToResponse(product);
     }
 
+    @CacheEvict(value = "products", allEntries = true)
     @Transactional
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         Product product = productRepository.findById(id)
@@ -150,6 +156,7 @@ public class ProductService {
         return brandRepository.findAll().stream().findFirst().orElse(null);
     }
 
+    @CacheEvict(value = "products", allEntries = true)
     @Transactional
     public void softDeleteProduct(Long id) {
         Product product = productRepository.findById(id)

@@ -5,6 +5,8 @@ import com.fastway.catalog.dto.CategoryResponse;
 import com.fastway.common.exception.ResourceNotFoundException;
 import com.fastway.common.security.TextSanitizer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final TextSanitizer textSanitizer;
 
+    @Cacheable(value = "categories")
     @Transactional(readOnly = true)
     public List<CategoryResponse> getActiveCategoriesTree() {
         List<Category> rootCategories = categoryRepository.findByParentCategoryIsNullAndIsActiveTrue();
@@ -26,6 +29,7 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
         Category parent = null;
@@ -47,6 +51,7 @@ public class CategoryService {
         return convertToResponse(category);
     }
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
         Category category = categoryRepository.findById(id)
@@ -76,6 +81,7 @@ public class CategoryService {
         return convertToResponse(category);
     }
 
+    @CacheEvict(value = "categories", allEntries = true)
     @Transactional
     public void softDeleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
