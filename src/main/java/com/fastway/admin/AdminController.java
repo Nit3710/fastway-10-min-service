@@ -32,6 +32,7 @@ public class AdminController {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final DeliveryPartnerRepository deliveryPartnerRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     // ── Dashboard Stats ──────────────────────────────────────────────────────
     @GetMapping("/dashboard")
@@ -106,6 +107,61 @@ public class AdminController {
                         dp.getCurrentLng()
                 )).toList();
         return ResponseEntity.ok(ApiResponse.success(partners, "Delivery partners retrieved"));
+    }
+
+    public record CreateDeliveryPartnerRequest(
+        String name,
+        String phone,
+        String password,
+        String vehicleType
+    ) {}
+
+    @PostMapping("/delivery-partners")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<ApiResponse<DeliveryPartnerDto>> createDeliveryPartner(
+            @RequestBody CreateDeliveryPartnerRequest request
+    ) {
+        if (request.phone() == null || request.phone().isBlank()) {
+            throw new IllegalArgumentException("Phone number is required");
+        }
+        if (userRepository.existsByPhone(request.phone())) {
+            throw new IllegalArgumentException("Phone number is already registered");
+        }
+
+        String rawPassword = (request.password() != null && !request.password().isBlank())
+                ? request.password()
+                : "123456";
+
+        User user = User.builder()
+                .name(request.name() != null && !request.name().isBlank() ? request.name() : "Rider " + request.phone().substring(Math.max(0, request.phone().length() - 4)))
+                .phone(request.phone())
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .role(UserRole.DELIVERY_PARTNER)
+                .build();
+
+        user = userRepository.save(user);
+
+        DeliveryPartner dp = DeliveryPartner.builder()
+                .user(user)
+                .vehicleType(request.vehicleType() != null && !request.vehicleType().isBlank() ? request.vehicleType() : "Motorbike")
+                .isActive(true)
+                .isAvailable(true)
+                .build();
+
+        dp = deliveryPartnerRepository.save(dp);
+
+        DeliveryPartnerDto dto = new DeliveryPartnerDto(
+                dp.getId(),
+                user.getName(),
+                user.getPhone(),
+                dp.getVehicleType(),
+                dp.getIsActive(),
+                dp.getIsAvailable(),
+                dp.getCurrentLat(),
+                dp.getCurrentLng()
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(dto, "Delivery partner created successfully"));
     }
 
     // ── Payments ─────────────────────────────────────────────────────────────
