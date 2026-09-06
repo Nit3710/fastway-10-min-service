@@ -17,7 +17,7 @@ import { useToastStore } from '../store/toastStore';
 import { getAssignments } from '../api/deliveryApi';
 import { apiLogout } from '../api/authApi';
 import { DeliveryAssignment, RootStackParamList } from '../types';
-import useLocationTracking from '../hooks/useLocationTracking';
+import { useLocationTracking } from '../hooks/useLocationTracking';
 import Card from '../components/Card';
 import THEME from '../theme/theme';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
