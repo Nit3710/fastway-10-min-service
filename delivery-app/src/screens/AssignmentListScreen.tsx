@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,6 +9,7 @@ import {
   Text,
   View,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -39,7 +40,6 @@ export const AssignmentListScreen: React.FC = () => {
   const [isOnDuty, setIsOnDuty] = useState(true);
   const [dutyLoading, setDutyLoading] = useState(false);
 
-  // Hook into location tracking using status calculated from backend responses
   const { isTracking, errorMsg: locationError } = useLocationTracking(hasActiveAssignment);
 
   const fetchDuty = async () => {
@@ -105,57 +105,102 @@ export const AssignmentListScreen: React.FC = () => {
     showToast('Logged out successfully', 'success');
   };
 
-  const filteredList = assignments.filter((a) => {
-    if (activeTab === 'ACTIVE') {
-      return a.status === 'ASSIGNED' || a.status === 'PICKED_UP' || a.status === 'OUT_FOR_DELIVERY';
-    } else {
-      return a.status === 'DELIVERED' || a.status === 'CANCELLED';
-    }
-  });
+  const handleQuickCall = (phone: string) => {
+    if (!phone) return;
+    Linking.openURL(`tel:${phone}`).catch(() => {
+      showToast('Unable to open phone dialer', 'error');
+    });
+  };
 
-  const getStatusColor = (status: string) => {
+  const activeDeliveries = assignments.filter(
+    (a) => a.status === 'ASSIGNED' || a.status === 'PICKED_UP' || a.status === 'OUT_FOR_DELIVERY'
+  );
+  const completedDeliveries = assignments.filter(
+    (a) => a.status === 'DELIVERED' || a.status === 'CANCELLED'
+  );
+
+  const filteredList = activeTab === 'ACTIVE' ? activeDeliveries : completedDeliveries;
+
+  const getStatusConfig = (status: string) => {
     switch (status) {
       case 'ASSIGNED':
-        return THEME.colors.warning;
+        return { color: THEME.colors.warning, bg: '#FFFBEB', icon: 'package-variant', label: 'ASSIGNED' };
       case 'PICKED_UP':
-        return '#0288D1';
+        return { color: THEME.colors.info, bg: '#EFF6FF', icon: 'storefront-outline', label: 'PICKED UP' };
       case 'OUT_FOR_DELIVERY':
-        return '#7B1FA2';
+        return { color: '#8B5CF6', bg: '#F5F3FF', icon: 'motorbike', label: 'ON THE WAY' };
       case 'DELIVERED':
-        return THEME.colors.success;
+        return { color: THEME.colors.success, bg: '#ECFDF5', icon: 'check-circle-outline', label: 'DELIVERED' };
       default:
-        return THEME.colors.textMuted;
+        return { color: THEME.colors.textMuted, bg: '#F1F5F9', icon: 'clock-outline', label: status };
     }
   };
 
   const renderCard = ({ item }: { item: DeliveryAssignment }) => {
+    const statusCfg = getStatusConfig(item.status);
     const itemCount = item.orderItems.reduce((acc, current) => acc + current.quantity, 0);
-    
+
     return (
       <Pressable onPress={() => navigation.navigate('AssignmentDetail', { assignmentId: item.id })}>
         <Card style={styles.assignmentCard}>
+          {/* Card Header */}
           <View style={styles.cardHeader}>
-            <Text style={styles.orderId}>Order #{item.orderId}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                {item.status.replace('_', ' ')}
-              </Text>
+            <View style={styles.orderBadgeGroup}>
+              <View style={styles.orderIconBg}>
+                <Icon name="receipt" size={18} color={THEME.colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.orderIdText}>Order #{item.orderId}</Text>
+                <Text style={styles.assignedTime}>
+                  {new Date(item.assignedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              </View>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
+              <Icon name={statusCfg.icon} size={14} color={statusCfg.color} style={{ marginRight: 4 }} />
+              <Text style={[styles.statusText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
             </View>
           </View>
 
-          <View style={styles.cardBody}>
-            <Text style={styles.infoLabel}>DELIVER TO:</Text>
-            <Text style={styles.addressLine}>{item.deliveryAddress.addressLine}</Text>
-            <Text style={styles.cityLine}>{item.deliveryAddress.city} — {item.deliveryAddress.pincode}</Text>
-            
-            <View style={styles.itemCountRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Icon name="package-variant-closed" size={16} color={THEME.colors.textSecondary} style={{ marginRight: 4 }} />
-                <Text style={styles.itemsLabel}>{itemCount} {itemCount === 1 ? 'item' : 'items'}</Text>
-              </View>
-              <Text style={styles.customerName}>Client: {item.customerName}</Text>
+          {/* Delivery Address Box */}
+          <View style={styles.addressBox}>
+            <Icon name="map-marker-radius-outline" size={20} color={THEME.colors.primary} style={styles.locationIcon} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.addressLabel}>DELIVERY LOCATION</Text>
+              <Text style={styles.addressLine} numberOfLines={2}>{item.deliveryAddress.addressLine}</Text>
+              <Text style={styles.cityLine}>{item.deliveryAddress.city} • {item.deliveryAddress.pincode}</Text>
             </View>
           </View>
+
+          {/* Customer & Quick Action Footer */}
+          <View style={styles.cardFooter}>
+            <View style={styles.customerMeta}>
+              <Icon name="account-circle-outline" size={18} color={THEME.colors.textSecondary} style={{ marginRight: 6 }} />
+              <View>
+                <Text style={styles.customerName}>{item.customerName}</Text>
+                <Text style={styles.itemsLabel}>{itemCount} {itemCount === 1 ? 'Item' : 'Items'}</Text>
+              </View>
+            </View>
+
+            {item.customerPhone && (
+              <Pressable
+                onPress={() => handleQuickCall(item.customerPhone)}
+                style={styles.quickCallBtn}
+                hitSlop={8}
+              >
+                <Icon name="phone-outline" size={16} color={THEME.colors.primary} />
+                <Text style={styles.quickCallText}>Call</Text>
+              </Pressable>
+            )}
+          </View>
+
+          {/* Customer OTP hint for active orders */}
+          {activeTab === 'ACTIVE' && (
+            <View style={styles.otpHintBanner}>
+              <Icon name="shield-key-outline" size={14} color="#D97706" style={{ marginRight: 6 }} />
+              <Text style={styles.otpHintText}>4-Digit Customer OTP Required for Delivery</Text>
+            </View>
+          )}
         </Card>
       </Pressable>
     );
@@ -163,60 +208,83 @@ export const AssignmentListScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor={THEME.colors.primary} barStyle="light-content" />
+      <StatusBar backgroundColor={THEME.colors.primaryDark} barStyle="light-content" />
 
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>Fastway Delivery</Text>
-          <Text style={styles.headerSubtitle}>Welcome, {user?.name || 'Partner'}</Text>
+      {/* Main Header */}
+      <View style={[styles.header, { paddingTop: insets.top + THEME.spacing.sm }]}>
+        <View style={styles.headerTop}>
+          <View style={styles.userProfileGroup}>
+            <View style={styles.avatarCircle}>
+              <Icon name="motorbike" size={24} color="#FFF" />
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.partnerTitle}>Fastway Partner</Text>
+              <Text style={styles.userName}>{user?.name || 'Delivery Agent'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.headerRightActions}>
+            <Pressable
+              onPress={handleToggleDuty}
+              disabled={dutyLoading}
+              style={[styles.dutyTogglePill, isOnDuty ? styles.dutyPillOn : styles.dutyPillOff]}
+            >
+              <View style={[styles.dotIndicator, { backgroundColor: isOnDuty ? '#10B981' : '#EF4444' }]} />
+              <Text style={styles.dutyPillText}>{isOnDuty ? 'ON DUTY' : 'OFF DUTY'}</Text>
+            </Pressable>
+
+            <Pressable onPress={handleLogout} style={styles.logoutIconButton}>
+              <Icon name="logout" size={20} color="#FFF" />
+            </Pressable>
+          </View>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Pressable onPress={handleToggleDuty} disabled={dutyLoading} style={[styles.dutyBtn, isOnDuty ? styles.dutyOn : styles.dutyOff]}>
-            <Text style={styles.dutyText}>{isOnDuty ? '🟢 On Duty' : '🔴 Off Duty'}</Text>
-          </Pressable>
-          <Pressable onPress={handleLogout} style={styles.logoutBtn}>
-            <Text style={styles.logoutText}>Logout</Text>
-          </Pressable>
+
+        {/* Stats Row */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statBox}>
+            <Text style={styles.statNum}>{activeDeliveries.length}</Text>
+            <Text style={styles.statLabel}>Active Tasks</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statBox}>
+            <Text style={styles.statNum}>{completedDeliveries.length}</Text>
+            <Text style={styles.statLabel}>Completed</Text>
+          </View>
         </View>
       </View>
 
-      {/* Tracker Status Indicator */}
+      {/* Live Location Tracking Bar */}
       {hasActiveAssignment && (
         <View style={[styles.trackerBar, isTracking ? styles.trackerActive : styles.trackerInactive]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-            <Icon
-              name={isTracking ? 'transit-connection-variant' : 'alert-circle-outline'}
-              size={16}
-              color="#FFF"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.trackerText}>
-              {isTracking ? 'Live Location Sync Active' : 'Location tracking disabled or offline'}
-            </Text>
-          </View>
-          {locationError && (
-            <Text style={styles.trackerError} numberOfLines={1}>{locationError}</Text>
-          )}
+          <Icon
+            name={isTracking ? 'crosshairs-gps' : 'map-marker-off-outline'}
+            size={16}
+            color={isTracking ? '#065F46' : '#991B1B'}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={[styles.trackerText, { color: isTracking ? '#065F46' : '#991B1B' }]}>
+            {isTracking ? 'Live GPS Navigation & Location Sync Active' : 'GPS Tracking Offline'}
+          </Text>
+          {locationError && <Text style={styles.trackerError}>{locationError}</Text>}
         </View>
       )}
 
-      {/* Navigation tabs */}
-      <View style={styles.tabBar}>
+      {/* Tab Segment Selector */}
+      <View style={styles.tabContainer}>
         <Pressable
           onPress={() => setActiveTab('ACTIVE')}
-          style={[styles.tab, activeTab === 'ACTIVE' && styles.activeTab]}
+          style={[styles.tabButton, activeTab === 'ACTIVE' && styles.tabButtonActive]}
         >
-          <Text style={[styles.tabLabel, activeTab === 'ACTIVE' && styles.activeTabLabel]}>
-            Active Deliveries
+          <Text style={[styles.tabText, activeTab === 'ACTIVE' && styles.tabTextActive]}>
+            Active Deliveries ({activeDeliveries.length})
           </Text>
         </Pressable>
         <Pressable
           onPress={() => setActiveTab('COMPLETED')}
-          style={[styles.tab, activeTab === 'COMPLETED' && styles.activeTab]}
+          style={[styles.tabButton, activeTab === 'COMPLETED' && styles.tabButtonActive]}
         >
-          <Text style={[styles.tabLabel, activeTab === 'COMPLETED' && styles.activeTabLabel]}>
-            History
+          <Text style={[styles.tabText, activeTab === 'COMPLETED' && styles.tabTextActive]}>
+            History ({completedDeliveries.length})
           </Text>
         </Pressable>
       </View>
@@ -225,7 +293,7 @@ export const AssignmentListScreen: React.FC = () => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={THEME.colors.primary} />
-          <Text style={styles.loadingText}>Fetching assignments...</Text>
+          <Text style={styles.loadingText}>Syncing deliveries...</Text>
         </View>
       ) : (
         <FlatList
@@ -238,12 +306,20 @@ export const AssignmentListScreen: React.FC = () => {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Icon name="package-variant" size={64} color={THEME.colors.textMuted} style={{ marginBottom: THEME.spacing.md }} />
-              <Text style={styles.emptyTitle}>No assignments found</Text>
+              <View style={styles.emptyIconCircle}>
+                <Icon
+                  name={activeTab === 'ACTIVE' ? 'moped-outline' : 'history'}
+                  size={48}
+                  color={THEME.colors.textMuted}
+                />
+              </View>
+              <Text style={styles.emptyTitle}>
+                {activeTab === 'ACTIVE' ? 'No Active Orders' : 'No Delivery History'}
+              </Text>
               <Text style={styles.emptySubtitle}>
                 {activeTab === 'ACTIVE'
-                  ? 'All clear! There are no pending delivery tasks assigned to you right now.'
-                  : 'Your completed deliveries history will appear here.'}
+                  ? 'Stay on duty! New delivery tasks assigned to you will appear here instantly.'
+                  : 'Delivered orders will be recorded here.'}
               </Text>
             </View>
           }
@@ -259,99 +335,160 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.background,
   },
   header: {
+    backgroundColor: THEME.colors.primary,
+    paddingHorizontal: THEME.spacing.lg,
+    paddingBottom: THEME.spacing.lg,
+    borderBottomLeftRadius: THEME.borderRadius.xl,
+    borderBottomRightRadius: THEME.borderRadius.xl,
+    ...THEME.shadows.medium,
+  },
+  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: THEME.colors.primary,
-    padding: THEME.spacing.lg,
+    marginBottom: THEME.spacing.md,
   },
-  headerInfo: {
-    flex: 1,
+  userProfileGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  headerTitle: {
-    ...THEME.typography.h2,
-    color: THEME.colors.surface,
-    fontWeight: '800',
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: THEME.spacing.md,
   },
-  headerSubtitle: {
-    ...THEME.typography.caption,
-    color: THEME.colors.primaryLight,
-    marginTop: 2,
-    fontWeight: '600',
+  userInfo: {
+    justifyContent: 'center',
   },
-  dutyBtn: {
-    paddingVertical: THEME.spacing.xs,
-    paddingHorizontal: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.sm,
-    marginRight: THEME.spacing.sm,
-  },
-  dutyOn: {
-    backgroundColor: '#1B5E20',
-  },
-  dutyOff: {
-    backgroundColor: '#B71C1C',
-  },
-  dutyText: {
+  partnerTitle: {
     fontSize: 11,
-    color: '#FFFFFF',
-    fontWeight: '800',
+    color: '#FFE0B2',
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  logoutBtn: {
-    paddingVertical: THEME.spacing.xs,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.sm,
+  userName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dutyTogglePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: THEME.borderRadius.round,
+    marginRight: THEME.spacing.xs,
+  },
+  dutyPillOn: {
+    backgroundColor: '#FFFFFF',
+  },
+  dutyPillOff: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  logoutText: {
-    ...THEME.typography.caption,
-    color: THEME.colors.surface,
-    fontWeight: '700',
+  dotIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
-  trackerBar: {
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.lg,
+  dutyPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: THEME.colors.text,
+  },
+  logoutIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  trackerActive: {
-    backgroundColor: '#E8F5E9',
-  },
-  trackerInactive: {
-    backgroundColor: '#FFEBEE',
-  },
-  trackerText: {
-    ...THEME.typography.caption,
-    fontWeight: '700',
-    color: THEME.colors.text,
-  },
-  trackerError: {
-    fontSize: 10,
-    color: THEME.colors.error,
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  tabBar: {
+  statsContainer: {
     flexDirection: 'row',
-    backgroundColor: THEME.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: THEME.borderRadius.lg,
+    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.lg,
+    alignItems: 'center',
   },
-  tab: {
+  statBox: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: THEME.spacing.md,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
   },
-  activeTab: {
-    borderBottomColor: THEME.colors.primary,
+  statNum: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
-  tabLabel: {
-    ...THEME.typography.bodyBold,
+  statLabel: {
+    fontSize: 11,
+    color: '#FFE0B2',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  trackerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: THEME.spacing.lg,
+  },
+  trackerActive: {
+    backgroundColor: '#D1FAE5',
+  },
+  trackerInactive: {
+    backgroundColor: '#FEE2E2',
+  },
+  trackerText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  trackerError: {
+    fontSize: 11,
+    color: '#991B1B',
+    marginLeft: 6,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: THEME.spacing.lg,
+    marginTop: THEME.spacing.md,
+    borderRadius: THEME.borderRadius.lg,
+    padding: 3,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: THEME.borderRadius.md,
+  },
+  tabButtonActive: {
+    backgroundColor: THEME.colors.surface,
+    ...THEME.shadows.light,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
     color: THEME.colors.textSecondary,
   },
-  activeTabLabel: {
+  tabTextActive: {
     color: THEME.colors.primary,
+    fontWeight: '800',
   },
   loadingContainer: {
     flex: 1,
@@ -366,92 +503,160 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: THEME.spacing.lg,
-    paddingBottom: 80,
+    paddingBottom: 40,
   },
   assignmentCard: {
     marginBottom: THEME.spacing.md,
     padding: THEME.spacing.md,
+    borderRadius: THEME.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
-    paddingBottom: THEME.spacing.sm,
-    marginBottom: THEME.spacing.sm,
+    marginBottom: THEME.spacing.md,
   },
-  orderId: {
-    ...THEME.typography.subtitle,
-    fontWeight: '700',
+  orderBadgeGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  orderIconBg: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: THEME.colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: THEME.spacing.sm,
+  },
+  orderIdText: {
+    fontSize: 15,
+    fontWeight: '800',
     color: THEME.colors.text,
   },
+  assignedTime: {
+    fontSize: 11,
+    color: THEME.colors.textMuted,
+    fontWeight: '500',
+  },
   statusBadge: {
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: THEME.borderRadius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: THEME.borderRadius.round,
   },
   statusText: {
     fontSize: 11,
     fontWeight: '800',
   },
-  cardBody: {
-    flexDirection: 'column',
+  addressBox: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    padding: THEME.spacing.md,
+    borderRadius: THEME.borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginBottom: THEME.spacing.md,
   },
-  infoLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: THEME.colors.textMuted,
-    marginBottom: 4,
-    letterSpacing: 0.5,
-  },
-  addressLine: {
-    ...THEME.typography.bodyBold,
-    color: THEME.colors.text,
-  },
-  cityLine: {
-    ...THEME.typography.caption,
-    color: THEME.colors.textSecondary,
+  locationIcon: {
+    marginRight: THEME.spacing.sm,
     marginTop: 2,
   },
-  itemCountRow: {
+  addressLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: THEME.colors.textMuted,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  addressLine: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: THEME.colors.text,
+    lineHeight: 18,
+  },
+  cityLine: {
+    fontSize: 12,
+    color: THEME.colors.textSecondary,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: THEME.spacing.md,
-    paddingTop: THEME.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
   },
-  itemsLabel: {
-    ...THEME.typography.caption,
-    color: THEME.colors.primary,
-    fontWeight: '700',
+  customerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   customerName: {
-    ...THEME.typography.caption,
+    fontSize: 13,
+    fontWeight: '700',
+    color: THEME.colors.text,
+  },
+  itemsLabel: {
+    fontSize: 11,
     color: THEME.colors.textSecondary,
+    fontWeight: '500',
+  },
+  quickCallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: THEME.borderRadius.round,
+  },
+  quickCallText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: THEME.colors.primary,
+    marginLeft: 4,
+  },
+  otpHintBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: THEME.borderRadius.sm,
+    marginTop: THEME.spacing.sm,
+  },
+  otpHintText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#92400E',
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: THEME.spacing.xxl,
+    paddingVertical: 60,
   },
-  emptyIcon: {
-    fontSize: 60,
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: THEME.spacing.md,
   },
   emptyTitle: {
-    ...THEME.typography.h2,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: THEME.colors.text,
   },
   emptySubtitle: {
-    ...THEME.typography.body,
+    fontSize: 13,
     color: THEME.colors.textSecondary,
     textAlign: 'center',
-    marginTop: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.lg,
+    marginTop: 6,
+    paddingHorizontal: THEME.spacing.xl,
+    lineHeight: 18,
   },
 });
 

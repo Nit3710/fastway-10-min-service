@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ScrollView,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -50,32 +51,35 @@ const ProductSkeleton = () => (
 );
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CAROUSEL_WIDTH = SCREEN_WIDTH - 32; // margin 16 each side
+const CAROUSEL_WIDTH = SCREEN_WIDTH - 32;
 
 const BANNERS = [
   {
     id: '1',
-    tag: 'WORKSHOP DEALS',
+    tag: '🔥 50% OFF WORKSHOP DEAL',
     title: 'PROFESSIONAL GRADE TOOLS & ACCS',
-    subtitle: 'Get direct on-site delivery in 10 minutes',
+    subtitle: 'On-site delivery guaranteed in 10 minutes',
     btnText: 'EXPLORE PRODUCTS',
     icon: 'hammer-wrench',
+    color: '#1E1D1B',
   },
   {
     id: '2',
-    tag: 'PREMIUM FITTINGS',
+    tag: '⭐ LUXURY FITTINGS',
     title: 'BRONZE, BRASS & CHROME FIXTURES',
     subtitle: 'Upgrade to high-durability luxury fittings',
     btnText: 'VIEW FITTINGS',
     icon: 'shower-head',
+    color: '#262421',
   },
   {
     id: '3',
-    tag: 'CONTRACTOR VALUE',
+    tag: '📦 BULK CONTRACTOR VALUE',
     title: 'TOP-GRADE CPVC & UPVC PIPING',
     subtitle: 'Direct warehouse bundle pricing in stock',
     btnText: 'EXPLORE PIPES',
     icon: 'pipe',
+    color: '#1B261E',
   },
 ];
 
@@ -92,7 +96,7 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({ onPressBanner }) => {
       const next = (slideIndex + 1) % BANNERS.length;
       setSlideIndex(next);
       scrollRef.current?.scrollTo({ x: next * CAROUSEL_WIDTH, animated: true });
-    }, 3000);
+    }, 3200);
     return () => clearInterval(interval);
   }, [slideIndex]);
 
@@ -117,27 +121,36 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({ onPressBanner }) => {
         {BANNERS.map((banner) => (
           <Pressable
             key={banner.id}
-            style={[styles.carouselSlide, { width: CAROUSEL_WIDTH }]}
+            style={[styles.carouselSlide, { width: CAROUSEL_WIDTH, backgroundColor: banner.color }]}
             onPress={onPressBanner}
           >
             <View style={styles.featuredTextCol}>
-              <Text style={styles.featuredTag}>{banner.tag}</Text>
+              <View style={styles.featuredTagBadge}>
+                <Text style={styles.featuredTag}>{banner.tag}</Text>
+              </View>
               <Text style={styles.featuredTitle}>{banner.title}</Text>
               <Text style={styles.featuredSubtitle}>{banner.subtitle}</Text>
               <View style={styles.featuredBtn}>
                 <Text style={styles.featuredBtnText}>{banner.btnText}</Text>
+                <Icon name="arrow-right" size={12} color={THEME.colors.brass} style={{ marginLeft: 4 }} />
               </View>
             </View>
             <View style={styles.featuredIconCol}>
-              <Icon name={banner.icon} size={42} color={THEME.colors.brass} />
+              <Icon name={banner.icon} size={44} color={THEME.colors.brass} />
             </View>
           </Pressable>
         ))}
       </ScrollView>
       <View style={styles.carouselCounter}>
-        <Text style={styles.carouselCounterText}>
-          {slideIndex + 1}/{BANNERS.length}
-        </Text>
+        {BANNERS.map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.carouselDot,
+              i === slideIndex && styles.carouselDotActive,
+            ]}
+          />
+        ))}
       </View>
     </View>
   );
@@ -243,11 +256,29 @@ const HomeScreen: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeBooking, setActiveBooking] = useState<any>(null);
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 70,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   const fetchCategories = async () => {
     try {
       setErrorCats(false);
       const data = await getCategories();
-      // FILTER OUT leftover test/seed data like "API Test Category"
       const filtered = data.filter((c) => c.name !== 'API Test Category');
       setCategories(filtered);
     } catch {
@@ -351,7 +382,7 @@ const HomeScreen: React.FC = () => {
       <FlatList
         data={[1]}
         keyExtractor={() => 'home'}
-        contentContainerStyle={{ paddingBottom: THEME.spacing.sm }}
+        contentContainerStyle={{ paddingBottom: THEME.spacing.md }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -361,22 +392,26 @@ const HomeScreen: React.FC = () => {
           />
         }
         renderItem={() => (
-          <View style={styles.container}>
-            {/* Minimal Header (Evokes specs/blueprint look, no heavy banners) */}
+          <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            
+            {/* Header: Location & Profile Greeting */}
             <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
               <View style={styles.headerLeft}>
+                <Text style={styles.welcomeGreeting}>
+                  {user?.name ? `Hi, ${user.name.split(' ')[0]} 👋` : 'Welcome to Fastway'}
+                </Text>
                 <View style={styles.locationRow}>
-                  <Icon name="map-marker-outline" size={16} color={THEME.colors.brass} />
+                  <Icon name="map-marker" size={16} color={THEME.colors.brass} />
                   <Text style={styles.locationLabel} numberOfLines={1}>
-                    {user?.name ? `Hi, ${user.name.split(' ')[0]} 👋` : 'Your Location'}
+                    Civil Lines, Sector 4 • 10 Mins
                   </Text>
+                  <Icon name="chevron-down" size={14} color={THEME.colors.graphiteMuted} />
                 </View>
               </View>
               <View style={styles.headerRight}>
                 <EmergencyHelpFAB variant="header" />
                 <Pressable onPress={() => navigation.navigate('Notifications')} style={styles.bellBtn}>
-                  {/* Outline icon */}
-                  <Icon name="bell-outline" size={20} color={THEME.colors.graphite} />
+                  <Icon name="bell-outline" size={22} color={THEME.colors.graphite} />
                   {unreadCount > 0 && (
                     <View style={styles.badge}>
                       <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -387,124 +422,67 @@ const HomeScreen: React.FC = () => {
               </View>
             </View>
 
-            {/* Rectangular Search Bar (Outline only, no fill, 8px radius) */}
+            {/* Search Bar with Brass Accent */}
             <Pressable
               style={styles.searchBar}
               onPress={() => navigation.navigate('Search')}
             >
-              <Icon name="magnify" size={20} color={THEME.colors.graphiteMuted} style={{ marginRight: THEME.spacing.sm }} />
+              <Icon name="magnify" size={22} color={THEME.colors.brass} style={{ marginRight: THEME.spacing.sm }} />
               <Text style={styles.searchPlaceholder} numberOfLines={1}>
                 Search plumbing, sanitary fittings, tools...
               </Text>
+              <View style={styles.searchMicBadge}>
+                <Icon name="filter-variant" size={16} color={THEME.colors.graphite} />
+              </View>
             </Pressable>
 
-            {/* Ultra-Modern Quick Access Shortcut Grid (1-Tap Direct Actions) */}
-            <View style={styles.modernShortcutsGrid}>
-              <Pressable
-                style={({ pressed }) => [styles.modernShortcutCard, pressed && styles.pressedShortcut]}
-                onPress={() => navigation.navigate('ProductList', { categoryName: 'Pipes & Fittings' })}
-              >
-                <View style={styles.modernShortcutIconBox}>
-                  <Icon name="pipe" size={22} color={THEME.colors.brass} />
-                </View>
-                <Text style={styles.modernShortcutLabel}>Pipes & Fittings</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.modernShortcutCard, pressed && styles.pressedShortcut]}
-                onPress={() => navigation.navigate('ProductList', { categoryName: 'Taps & Valves' })}
-              >
-                <View style={styles.modernShortcutIconBox}>
-                  <Icon name="shower-head" size={22} color={THEME.colors.brass} />
-                </View>
-                <Text style={styles.modernShortcutLabel}>Taps & Valves</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.modernShortcutCard, pressed && styles.pressedShortcut]}
-                onPress={() => navigation.navigate('BookService')}
-              >
-                <View style={[styles.modernShortcutIconBox, { backgroundColor: THEME.colors.graphite }]}>
-                  <Icon name="account-wrench" size={22} color="#FFF" />
-                </View>
-                <Text style={styles.modernShortcutLabel}>Book Plumber</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.modernShortcutCard, pressed && styles.pressedShortcut]}
-                onPress={() => navigation.navigate('Calculator')}
-              >
-                <View style={[styles.modernShortcutIconBox, { backgroundColor: THEME.colors.brass }]}>
-                  <Icon name="ruler-square" size={22} color="#FFF" />
-                </View>
-                <Text style={styles.modernShortcutLabel}>Estimator</Text>
-              </Pressable>
-            </View>
-
-            {/* Polished Trust Signals Row */}
+            {/* Micro-Trust Signals Row */}
             <View style={styles.trustRow}>
               <View style={styles.trustItem}>
-                <Icon name="flash-outline" size={12} color={THEME.colors.brass} />
+                <Icon name="flash-outline" size={13} color={THEME.colors.brass} />
                 <Text style={styles.trustText}>10 MIN DELIVERY</Text>
               </View>
               <View style={styles.trustDivider} />
               <View style={styles.trustItem}>
-                <Icon name="shield-check-outline" size={12} color={THEME.colors.brass} />
+                <Icon name="shield-check-outline" size={13} color={THEME.colors.brass} />
                 <Text style={styles.trustText}>100% GENUINE</Text>
               </View>
               <View style={styles.trustDivider} />
               <View style={styles.trustItem}>
-                <Icon name="swap-horizontal" size={12} color={THEME.colors.brass} />
+                <Icon name="swap-horizontal" size={13} color={THEME.colors.brass} />
                 <Text style={styles.trustText}>EASY RETURNS</Text>
               </View>
             </View>
 
-            {/* Active Plumber Visit Banner */}
+            {/* Active Plumber Visit Compact Live Strip */}
             {activeBooking && (
-              <Card style={styles.activeBookingCard} elevation="none">
-                <View style={styles.activeBookingHeader}>
-                  <View style={styles.activeBookingStatusRow}>
-                    <View style={styles.activeBookingLed} />
-                    <Text style={styles.activeBookingTitle}>ACTIVE PLUMBER VISIT BOOKED</Text>
-                  </View>
-                  <Text style={styles.activeBookingId}>{activeBooking.id}</Text>
-                </View>
-
-                <View style={styles.activeBookingMain}>
+              <Pressable
+                onPress={() => navigation.navigate('TrackPlumber', { bookingId: activeBooking.id })}
+                style={styles.activeBookingStrip}
+              >
+                <View style={styles.activeBookingStripLeft}>
+                  <View style={styles.activeBookingLed} />
+                  <Icon name="account-wrench" size={18} color={THEME.colors.brass} style={{ marginRight: 8 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.activeBookingService}>{activeBooking.serviceType.toUpperCase()}</Text>
-                    <Text style={styles.activeBookingDesc} numberOfLines={1}>
-                      {activeBooking.description}
+                    <Text style={styles.activeBookingStripTitle} numberOfLines={1}>
+                      PLUMBER BOOKED • {activeBooking.serviceType.toUpperCase()}
                     </Text>
-                    <View style={styles.activeBookingTimeRow}>
-                      <Icon name="clock-outline" size={14} color={THEME.colors.brass} style={{ marginRight: 4 }} />
-                      <Text style={styles.activeBookingTimeText}>{activeBooking.date} • {activeBooking.slot}</Text>
-                    </View>
+                    <Text style={styles.activeBookingStripTime} numberOfLines={1}>
+                      {activeBooking.date} • {activeBooking.slot}
+                    </Text>
                   </View>
                 </View>
-
-                <View style={styles.activeBookingActions}>
-                  <Pressable
-                    onPress={() => navigation.navigate('TrackPlumber', { bookingId: activeBooking.id })}
-                    style={styles.activeBookingTrackBtn}
-                  >
-                    <Icon name="map-marker-distance" size={16} color="#FFF" style={{ marginRight: 6 }} />
-                    <Text style={styles.activeBookingTrackText}>TRACK LIVE</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => navigation.navigate('BookingsList')}
-                    style={styles.activeBookingDetailBtn}
-                  >
-                    <Text style={styles.activeBookingDetailText}>VIEW ALL</Text>
-                  </Pressable>
+                <View style={styles.activeBookingTrackPill}>
+                  <Text style={styles.activeBookingTrackPillText}>TRACK LIVE</Text>
+                  <Icon name="chevron-right" size={14} color="#FFF" />
                 </View>
-              </Card>
+              </Pressable>
             )}
 
-            {/* Themed Workshop Banner Carousel */}
+            {/* Themed Hero Banner Carousel */}
             <BannerCarousel onPressBanner={() => navigation.navigate('ProductList', {})} />
 
-            {/* Categories list */}
+            {/* Shop by Category */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Shop by Category</Text>
@@ -543,12 +521,36 @@ const HomeScreen: React.FC = () => {
               )}
             </View>
 
-            {/* Trending Products list (MOVED UP FOR FAST BUYING) */}
+            {/* Compact Express Plumber Booking Strip */}
+            <Pressable
+              onPress={() => navigation.navigate('BookService')}
+              style={({ pressed }) => [styles.plumberExpressStrip, pressed && { opacity: 0.92 }]}
+            >
+              <View style={styles.plumberStripLeft}>
+                <View style={styles.plumberStripIconBox}>
+                  <Icon name="account-hard-hat" size={18} color={THEME.colors.brass} />
+                </View>
+                <View style={{ flex: 1, paddingRight: 6 }}>
+                  <Text style={styles.plumberStripTitle} numberOfLines={1}>
+                    Need an Emergency Plumber?
+                  </Text>
+                  <Text style={styles.plumberStripSubtitle} numberOfLines={1}>
+                    Verified experts arrive in ~15 mins • 4.9★ Rated
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.plumberStripCta}>
+                <Text style={styles.plumberStripCtaText}>BOOK NOW</Text>
+                <Icon name="chevron-right" size={12} color="#FFF" />
+              </View>
+            </Pressable>
+
+            {/* Trending Products & Flash Sale List */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Icon name="fire" size={18} color={THEME.colors.amber} style={{ marginRight: 6 }} />
-                  <Text style={styles.sectionTitle}>Trending Products</Text>
+                  <Text style={styles.sectionTitle}>Trending Deals</Text>
                 </View>
                 <Pressable onPress={() => navigation.navigate('ProductList', {})}>
                   <Text style={styles.seeAll}>SEE ALL</Text>
@@ -585,8 +587,8 @@ const HomeScreen: React.FC = () => {
               )}
             </View>
 
-            {/* Preconfigured Project Kits */}
-            <View style={[styles.section, !customKits.length && { marginBottom: THEME.spacing.xxxl }]}>
+            {/* 1-Tap Preconfigured Project Repair Kits */}
+            <View style={[styles.section, !customKits.length && { marginBottom: THEME.spacing.xl }]}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>PRE-LOADED PROJECT KITS</Text>
               </View>
@@ -623,7 +625,7 @@ const HomeScreen: React.FC = () => {
 
             {/* Custom Saved Kits */}
             {customKits.length > 0 && (
-              <View style={[styles.section, { marginBottom: THEME.spacing.xxxl }]}>
+              <View style={[styles.section, { marginBottom: THEME.spacing.xl }]}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>YOUR SAVED PROJECT KITS</Text>
                 </View>
@@ -647,7 +649,8 @@ const HomeScreen: React.FC = () => {
                 </ScrollView>
               </View>
             )}
-          </View>
+
+          </Animated.View>
         )}
       />
     </SafeAreaView>
@@ -662,16 +665,22 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1 
   },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.sm,
+    paddingBottom: THEME.spacing.xs,
     backgroundColor: 'transparent',
   },
   headerLeft: {
     flex: 1,
+  },
+  welcomeGreeting: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: THEME.colors.graphiteMuted,
   },
   headerRight: {
     flexDirection: 'row',
@@ -681,26 +690,27 @@ const styles = StyleSheet.create({
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    maxWidth: 200,
+    gap: 4,
+    maxWidth: 220,
+    marginTop: 1,
   },
   locationLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: THEME.colors.graphite,
-    flex: 1,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: '#FFF',
     marginHorizontal: THEME.spacing.lg,
-    marginVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.lg, // 8px radius
+    marginVertical: THEME.spacing.xs,
+    borderRadius: THEME.borderRadius.lg,
     paddingHorizontal: THEME.spacing.md,
-    height: 44,
+    height: 46,
     borderWidth: 1,
     borderColor: THEME.colors.border,
+    ...THEME.shadows.light,
   },
   searchPlaceholder: {
     fontSize: 13,
@@ -709,11 +719,19 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
+  searchMicBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: '#F5F3F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   trustRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: THEME.spacing.md,
+    marginVertical: THEME.spacing.sm,
     gap: 8,
   },
   trustItem: {
@@ -723,7 +741,7 @@ const styles = StyleSheet.create({
   },
   trustText: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '800',
     color: THEME.colors.graphiteMuted,
     letterSpacing: 0.3,
   },
@@ -734,13 +752,13 @@ const styles = StyleSheet.create({
   },
   carouselWrapper: {
     marginHorizontal: THEME.spacing.lg,
-    marginVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.lg, // 8px
+    marginVertical: THEME.spacing.xs,
+    borderRadius: THEME.borderRadius.lg,
     borderWidth: 1,
     borderColor: THEME.colors.border,
     overflow: 'hidden',
-    backgroundColor: THEME.colors.graphite,
     position: 'relative',
+    ...THEME.shadows.light,
   },
   carouselSlide: {
     padding: THEME.spacing.lg,
@@ -750,29 +768,42 @@ const styles = StyleSheet.create({
   },
   carouselCounter: {
     position: 'absolute',
-    bottom: 8,
-    right: 12,
+    bottom: 10,
+    right: 14,
+    flexDirection: 'row',
+    gap: 4,
   },
-  carouselCounterText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: THEME.colors.brass,
-    letterSpacing: 0.5,
+  carouselDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  carouselDotActive: {
+    width: 14,
+    backgroundColor: THEME.colors.brass,
   },
   featuredTextCol: {
     flex: 1,
     paddingRight: THEME.spacing.sm,
   },
+  featuredTagBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(232, 163, 61, 0.18)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
   featuredTag: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '900',
     color: THEME.colors.brass,
-    marginBottom: 4,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   featuredTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFF',
     marginBottom: 4,
     lineHeight: 18,
@@ -783,16 +814,19 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.md,
   },
   featuredBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     borderWidth: 1,
     borderColor: THEME.colors.brass,
-    borderRadius: THEME.borderRadius.xs, // 2px
+    borderRadius: THEME.borderRadius.xs,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.xs,
+    backgroundColor: 'rgba(168, 125, 74, 0.1)',
   },
   featuredBtnText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
     color: THEME.colors.brass,
     letterSpacing: 0.5,
   },
@@ -801,26 +835,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   section: {
-    marginTop: THEME.spacing.lg,
+    marginTop: THEME.spacing.md,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.sm,
+    marginBottom: THEME.spacing.xs,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: THEME.colors.graphite,
-    fontWeight: '700',
+    fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   seeAll: {
     fontSize: 11,
     color: THEME.colors.brass,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: 0.3,
   },
   hList: { 
@@ -848,49 +882,6 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '900',
   },
-  estimatorTile: {
-    marginHorizontal: THEME.spacing.lg,
-    marginVertical: THEME.spacing.sm,
-    backgroundColor: THEME.colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
-    borderRadius: THEME.borderRadius.sm,
-    padding: THEME.spacing.md,
-  },
-  estimatorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  estimatorBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: THEME.colors.brass,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: THEME.borderRadius.xs,
-    marginBottom: 6,
-  },
-  estimatorBadgeText: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: '#FFF',
-    letterSpacing: 0.3,
-  },
-  estimatorTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: THEME.colors.graphite,
-    letterSpacing: 0.5,
-  },
-  estimatorSubtitle: {
-    fontSize: 10,
-    color: THEME.colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 13,
-  },
-  estimatorIconContainer: {
-    alignItems: 'center',
-    marginLeft: THEME.spacing.sm,
-  },
   kitListContainer: {
     paddingHorizontal: THEME.spacing.lg,
     gap: THEME.spacing.md,
@@ -901,7 +892,9 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.md,
     borderWidth: 1,
     borderColor: THEME.colors.border,
-    borderRadius: THEME.borderRadius.sm,
+    borderRadius: THEME.borderRadius.md,
+    backgroundColor: '#FFF',
+    ...THEME.shadows.light,
   },
   kitIconBadge: {
     width: 38,
@@ -941,181 +934,112 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
-  activeBookingCard: {
+  activeBookingStrip: {
     marginHorizontal: THEME.spacing.lg,
-    marginVertical: THEME.spacing.sm,
-    padding: THEME.spacing.md,
+    marginVertical: THEME.spacing.xs,
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: 8,
     backgroundColor: '#FAF9F6',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: THEME.colors.brass,
-    borderRadius: THEME.borderRadius.sm,
-  },
-  activeBookingHeader: {
+    borderRadius: THEME.borderRadius.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    ...THEME.shadows.light,
   },
-  activeBookingStatusRow: {
+  activeBookingStripLeft: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingRight: 8,
   },
   activeBookingLed: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#4CAF50',
-    marginRight: 6,
-  },
-  activeBookingTitle: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: THEME.colors.brass,
-    letterSpacing: 0.5,
-  },
-  activeBookingId: {
-    fontFamily: THEME.typography.price.fontFamily,
-    fontSize: 9,
-    fontWeight: '800',
-    color: THEME.colors.graphiteMuted,
-  },
-  activeBookingMain: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: THEME.spacing.sm,
-  },
-  activeBookingService: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: THEME.colors.graphite,
-  },
-  activeBookingDesc: {
-    fontSize: 11,
-    color: THEME.colors.textSecondary,
-    marginTop: 2,
-  },
-  activeBookingTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  activeBookingTimeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: THEME.colors.graphite,
-  },
-  activeBookingActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: THEME.spacing.xs,
-  },
-  activeBookingTrackBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 36,
-    backgroundColor: THEME.colors.brass,
-    borderRadius: THEME.borderRadius.xs,
     marginRight: 8,
   },
-  activeBookingTrackText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  activeBookingDetailBtn: {
-    paddingHorizontal: 14,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
-    borderRadius: THEME.borderRadius.xs,
-    backgroundColor: '#FFF',
-  },
-  activeBookingDetailText: {
-    color: THEME.colors.graphite,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  quickToolsRow: {
-    flexDirection: 'row',
-    marginHorizontal: THEME.spacing.lg,
-    marginTop: THEME.spacing.md,
-    gap: THEME.spacing.md,
-  },
-  quickToolCard: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.md,
-    alignItems: 'center',
-  },
-  quickToolBadge: {
-    backgroundColor: THEME.colors.brass,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: THEME.borderRadius.xs,
-  },
-  quickToolBadgeText: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: '#FFF',
-    letterSpacing: 0.5,
-  },
-  quickToolTitle: {
+  activeBookingStripTitle: {
     fontSize: 11,
     fontWeight: '800',
     color: THEME.colors.graphite,
-    letterSpacing: 0.3,
-    textAlign: 'center',
   },
-  quickToolSubtitle: {
+  activeBookingStripTime: {
     fontSize: 9,
+    fontWeight: '600',
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 2,
   },
-  modernShortcutsGrid: {
+  activeBookingTrackPill: {
+    backgroundColor: THEME.colors.brass,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
     flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activeBookingTrackPillText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginRight: 2,
+  },
+  plumberExpressStrip: {
     marginHorizontal: THEME.spacing.lg,
-    marginTop: THEME.spacing.xs,
-    marginBottom: THEME.spacing.xs,
+    marginVertical: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: 10,
+    backgroundColor: '#262421',
+    borderRadius: THEME.borderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modernShortcutCard: {
-    alignItems: 'center',
-    flex: 1,
-    paddingHorizontal: 2,
-  },
-  modernShortcutIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#FFF',
     borderWidth: 1,
-    borderColor: THEME.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
+    borderColor: THEME.colors.brass,
     ...THEME.shadows.light,
   },
-  modernShortcutLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: THEME.colors.graphite,
-    textAlign: 'center',
-    lineHeight: 12,
+  plumberStripLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  pressedShortcut: {
-    transform: [{ scale: 0.94 }],
-    opacity: 0.9,
+  plumberStripIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1E1D1B',
+    borderWidth: 1,
+    borderColor: THEME.colors.brass,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  plumberStripTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  plumberStripSubtitle: {
+    fontSize: 9,
+    color: '#D1CDCA',
+    marginTop: 1,
+  },
+  plumberStripCta: {
+    backgroundColor: THEME.colors.brass,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  plumberStripCtaText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFF',
+    letterSpacing: 0.5,
+    marginRight: 2,
   },
 });
 

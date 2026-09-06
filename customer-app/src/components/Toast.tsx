@@ -10,29 +10,46 @@ export const Toast: React.FC = () => {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(120)).current;
 
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+
   useEffect(() => {
     if (visible) {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 80,
-        friction: 10,
-      }).start();
+      Animated.parallel([
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 90,
+          friction: 9,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 90,
+          friction: 9,
+        }),
+      ]).start();
 
       const timer = setTimeout(() => {
         handleDismiss();
-      }, 1000);
+      }, 2200);
 
       return () => clearTimeout(timer);
     }
   }, [visible]);
 
   const handleDismiss = () => {
-    Animated.timing(slideAnim, {
-      toValue: 120,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 120,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 0.9,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
       hideToast();
     });
   };
@@ -47,7 +64,7 @@ export const Toast: React.FC = () => {
         styles.toast,
         {
           bottom: Math.max(insets.bottom + 20, 40),
-          transform: [{ translateY: slideAnim }],
+          transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
         },
       ]}
     >

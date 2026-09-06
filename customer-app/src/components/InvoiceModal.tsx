@@ -382,11 +382,9 @@ const styles = StyleSheet.create({
   },
   shareBtn: {
     flex: 1,
-    height: 42,
   },
   closeBtn: {
     flex: 1,
-    height: 42,
   },
 });
 

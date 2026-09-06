@@ -92,96 +92,126 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
+  const cardScaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handleCardPressIn = () => {
+    Animated.spring(cardScaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      speed: 60,
+      bounciness: 0,
+    }).start();
+  };
+
+  const handleCardPressOut = () => {
+    Animated.spring(cardScaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 5,
+      tension: 50,
+    }).start();
+  };
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
+    <Animated.View
+      style={[
         compact ? styles.compactCard : styles.normalCard,
-        pressed && styles.pressed,
+        { transform: [{ scale: cardScaleAnim }] },
         style,
       ]}
     >
-      {/* Image and stock overlay container */}
-      <View style={[styles.imageContainer, compact ? styles.compactImage : styles.normalImage]}>
-        {product.imageUrl ? (
-          <Image
-            source={{ uri: product.imageUrl }}
-            style={styles.image}
-            resizeMode="contain"
-          />
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            {/* Outline icon for blueprint design */}
-            <Icon name="package-variant-closed" size={28} color={THEME.colors.graphiteMuted} />
-          </View>
-        )}
-        
-        {isOutOfStock && (
-          <View style={styles.outOfStockOverlay}>
-            <Text style={styles.outOfStockText}>OUT OF STOCK</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Info Container */}
-      <View style={styles.info}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
-          <Text style={styles.unit}>{product.unit || '1 unit'}</Text>
-        </View>
-
-        <View style={styles.footerBlock}>
-          <View style={styles.priceRow}>
-            <Text style={styles.price}>₹{product.price.toFixed(0)}</Text>
-            {hasDiscount && (
-              <Text style={styles.mrp}>₹{product.mrp.toFixed(0)}</Text>
-            )}
-          </View>
-          {hasDiscount && (
-            <Text style={styles.saveText}>Save {discountPct}%</Text>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handleCardPressIn}
+        onPressOut={handleCardPressOut}
+        style={styles.card}
+      >
+        {/* Image and stock overlay container */}
+        <View style={[styles.imageContainer, compact ? styles.compactImage : styles.normalImage]}>
+          {hasDiscount && !isOutOfStock && (
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountBadgeText}>{discountPct}% OFF</Text>
+            </View>
           )}
 
-          {/* Cart Stepper Control */}
-          <Animated.View style={[styles.cartControl, { transform: [{ scale: scaleAnim }] }]}>
-            {isOutOfStock ? (
-              <View style={styles.disabledButton}>
-                <Text style={styles.disabledButtonText}>UNAVAILABLE</Text>
-              </View>
-            ) : adding ? (
-              <View style={styles.stepperContainer}>
-                <ActivityIndicator size="small" color={THEME.colors.surface} />
-              </View>
-            ) : quantity > 0 ? (
-              <View style={styles.stepperContainer}>
-                <Pressable onPress={handleDecrement} style={styles.stepperBtn} hitSlop={6}>
-                  <Icon name="minus" size={14} color="#FFF" />
-                </Pressable>
-                <Text style={styles.stepperQty}>{quantity}</Text>
-                <Pressable onPress={handleIncrement} style={styles.stepperBtn} hitSlop={6}>
-                  <Icon name="plus" size={14} color="#FFF" />
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable onPress={handleIncrement} style={styles.addButton}>
-                <Text style={styles.addButtonText}>ADD</Text>
-              </Pressable>
-            )}
-          </Animated.View>
+          {product.imageUrl ? (
+            <Image
+              source={{ uri: product.imageUrl }}
+              style={styles.image}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Icon name="package-variant-closed" size={28} color={THEME.colors.graphiteMuted} />
+            </View>
+          )}
+          
+          {isOutOfStock && (
+            <View style={styles.outOfStockOverlay}>
+              <Text style={styles.outOfStockText}>OUT OF STOCK</Text>
+            </View>
+          )}
         </View>
 
-        {isLowStock && !isOutOfStock && (
-          <Text style={styles.lowStock}>Only {product.stockQty} left!</Text>
-        )}
-      </View>
-    </Pressable>
+        {/* Info Container */}
+        <View style={styles.info}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.titleBox}>
+              <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
+            </View>
+            <Text style={styles.unit} numberOfLines={1}>{product.unit || '1 unit'}</Text>
+          </View>
+
+          <View style={styles.footerBlock}>
+            <View style={styles.priceRow}>
+              <Text style={styles.price}>₹{product.price.toFixed(0)}</Text>
+              {hasDiscount && (
+                <Text style={styles.mrp}>₹{product.mrp.toFixed(0)}</Text>
+              )}
+            </View>
+
+            {/* Cart Stepper Control */}
+            <Animated.View style={[styles.cartControl, { transform: [{ scale: scaleAnim }] }]}>
+              {isOutOfStock ? (
+                <View style={styles.disabledButton}>
+                  <Text style={styles.disabledButtonText}>UNAVAILABLE</Text>
+                </View>
+              ) : adding ? (
+                <View style={styles.stepperContainer}>
+                  <ActivityIndicator size="small" color={THEME.colors.surface} />
+                </View>
+              ) : quantity > 0 ? (
+                <View style={styles.stepperContainer}>
+                  <Pressable onPress={handleDecrement} style={styles.stepperBtn} hitSlop={6}>
+                    <Icon name="minus" size={14} color="#FFF" />
+                  </Pressable>
+                  <Text style={styles.stepperQty}>{quantity}</Text>
+                  <Pressable onPress={handleIncrement} style={styles.stepperBtn} hitSlop={6}>
+                    <Icon name="plus" size={14} color="#FFF" />
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable onPress={handleIncrement} style={styles.addButton}>
+                  <Text style={styles.addButtonText}>ADD</Text>
+                </Pressable>
+              )}
+            </Animated.View>
+          </View>
+
+          {isLowStock && !isOutOfStock && (
+            <Text style={styles.lowStock} numberOfLines={1}>Only {product.stockQty} left!</Text>
+          )}
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
+    flex: 1,
     backgroundColor: '#FFF',
-    borderRadius: THEME.borderRadius.lg, // 8px radius
+    borderRadius: THEME.borderRadius.lg,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: THEME.colors.border,
@@ -195,10 +225,12 @@ const styles = StyleSheet.create({
     width: '47%',
     marginHorizontal: '1.5%',
     marginBottom: THEME.spacing.md,
+    height: 250,
   },
   compactCard: {
-    width: 140,
+    width: 144,
     marginRight: THEME.spacing.md,
+    height: 236,
   },
   pressed: {
     opacity: 0.95,
@@ -211,10 +243,10 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.sm,
   },
   normalImage: {
-    height: 120,
+    height: 110,
   },
   compactImage: {
-    height: 100,
+    height: 96,
   },
   image: {
     width: '100%',
@@ -227,9 +259,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: THEME.colors.surfaceRaised,
   },
+  discountBadge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: '#E65100',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    zIndex: 2,
+  },
+  discountBadgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
   outOfStockOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(237, 235, 230, 0.8)',
+    backgroundColor: 'rgba(237, 235, 230, 0.82)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -245,24 +293,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderTopWidth: 1,
     borderTopColor: THEME.colors.surfaceRaised,
+    justifyContent: 'space-between',
+  },
+  titleBox: {
+    height: 32,
+    justifyContent: 'flex-start',
   },
   name: { 
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700', 
     color: THEME.colors.graphite,
-    marginBottom: 2,
-    lineHeight: 16,
+    lineHeight: 15,
   },
   unit: { 
-    fontSize: 11, 
+    fontSize: 10, 
     color: THEME.colors.graphiteMuted, 
-    marginBottom: THEME.spacing.sm,
+    marginTop: 2,
+    marginBottom: 4,
   },
   lowStock: { 
-    fontSize: 10, 
+    fontSize: 9, 
     color: THEME.colors.error, 
     fontWeight: '700', 
-    marginTop: THEME.spacing.xs,
+    marginTop: 2,
   },
   footerBlock: {
     marginTop: 'auto',
@@ -275,8 +328,8 @@ const styles = StyleSheet.create({
   },
   price: { 
     fontFamily: THEME.typography.price.fontFamily,
-    fontSize: 15,
-    fontWeight: '700', 
+    fontSize: 14,
+    fontWeight: '800', 
     color: THEME.colors.graphite,
   },
   mrp: { 
@@ -284,23 +337,17 @@ const styles = StyleSheet.create({
     color: THEME.colors.graphiteMuted, 
     textDecorationLine: 'line-through',
   },
-  saveText: {
-    fontSize: 10,
-    color: THEME.colors.amber,
-    fontWeight: '700',
-    marginTop: 1,
-  },
   cartControl: {
     width: '100%',
-    height: 32,
-    marginTop: THEME.spacing.sm,
+    height: 30,
+    marginTop: 6,
     justifyContent: 'center',
   },
   addButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: THEME.colors.brass,
-    borderRadius: THEME.borderRadius.sm, // 4px sharp corner
+    borderRadius: THEME.borderRadius.xs,
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -308,14 +355,14 @@ const styles = StyleSheet.create({
   addButtonText: { 
     color: THEME.colors.brass, 
     fontSize: 11, 
-    fontWeight: '700',
+    fontWeight: '800',
   },
   stepperContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: THEME.colors.brass,
-    borderRadius: THEME.borderRadius.sm, // 4px sharp corner
+    borderRadius: THEME.borderRadius.xs,
     height: '100%',
     paddingHorizontal: 4,
   },
@@ -324,14 +371,14 @@ const styles = StyleSheet.create({
   },
   stepperQty: {
     color: '#FFF',
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '800',
     minWidth: 16,
     textAlign: 'center',
   },
   disabledButton: {
     backgroundColor: THEME.colors.surfaceRaised,
-    borderRadius: THEME.borderRadius.sm,
+    borderRadius: THEME.borderRadius.xs,
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',

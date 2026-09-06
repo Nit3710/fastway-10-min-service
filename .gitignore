@@ -10,6 +10,7 @@ node_modules/
 **/target/
 **/bin/
 **/out/
+**/.gradle/
 
 # Secret & Private Configuration Files (DO NOT COMMIT)
 config/application-local.properties

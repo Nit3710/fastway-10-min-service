@@ -60,7 +60,7 @@ const OrderListScreen: React.FC = () => {
       return;
     }
     try {
-      showToast('Adding order items to cart...', 'info');
+      showToast('Adding order items to cart...', 'success');
       for (const item of order.items) {
         await addItem(item.productId, item.quantity);
       }
@@ -160,7 +160,7 @@ const OrderListScreen: React.FC = () => {
             style={styles.invoiceBtn}
           >
             <Icon name="file-document-outline" size={14} color={THEME.colors.brass} style={{ marginRight: 4 }} />
-            <Text style={styles.invoiceBtnText}>INVOICE & 7-DAY WARRANTY</Text>
+            <Text style={styles.invoiceBtnText} numberOfLines={1}>VIEW INVOICE</Text>
           </Pressable>
         </View>
       </Card>
@@ -342,6 +342,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: THEME.colors.graphite,
     letterSpacing: 0.3,
+    flexShrink: 1,
+    paddingHorizontal: 2,
   },
   errorText: {
     fontSize: 14,

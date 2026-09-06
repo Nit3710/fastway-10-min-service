@@ -1,18 +1,19 @@
 export const COLORS = {
-  primary: '#E65100', // Rust Orange - modern quick-commerce brand
-  primaryLight: '#FFCCBC',
-  primaryDark: '#5D1F00',
+  primary: '#E65100', // Express Orange
+  primaryLight: '#FFE0B2',
+  primaryDark: '#BF360C',
   accent: '#FF7043',
-  background: '#F9F9F9',
+  background: '#F4F6F8', // Soft neutral gray for cards separation
   surface: '#FFFFFF',
-  text: '#212121', // Dark charcoal gray for typography readability
-  textSecondary: '#666666',
-  textMuted: '#9E9E9E',
-  border: '#E0E0E0',
-  error: '#D32F2F',
-  success: '#388E3C',
-  warning: '#F57C00',
-  overlay: 'rgba(0, 0, 0, 0.4)',
+  text: '#1E293B', // Slate 800 for sharp legibility
+  textSecondary: '#64748B', // Slate 500
+  textMuted: '#94A3B8', // Slate 400
+  border: '#E2E8F0',
+  error: '#EF4444',
+  success: '#10B981',
+  warning: '#F59E0B',
+  info: '#3B82F6',
+  overlay: 'rgba(15, 23, 42, 0.5)',
 };
 
 export const SPACING = {
@@ -26,18 +27,18 @@ export const SPACING = {
 
 export const TYPOGRAPHY = {
   h1: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700' as const,
-    lineHeight: 34,
+    lineHeight: 32,
   },
   h2: {
-    fontSize: 22,
-    fontWeight: '600' as const,
-    lineHeight: 28,
+    fontSize: 20,
+    fontWeight: '700' as const,
+    lineHeight: 26,
   },
   subtitle: {
     fontSize: 16,
-    fontWeight: '500' as const,
+    fontWeight: '600' as const,
     lineHeight: 22,
   },
   body: {
@@ -52,37 +53,37 @@ export const TYPOGRAPHY = {
   },
   caption: {
     fontSize: 12,
-    fontWeight: '400' as const,
+    fontWeight: '500' as const,
     lineHeight: 16,
   },
   button: {
     fontSize: 15,
-    fontWeight: '600' as const,
+    fontWeight: '700' as const,
     lineHeight: 20,
   },
 };
 
 export const BORDER_RADIUS = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  sm: 6,
+  md: 10,
+  lg: 14,
+  xl: 20,
   round: 9999,
 };
 
 export const SHADOWS = {
   light: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     elevation: 2,
   },
   medium: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 4,
   },
 };

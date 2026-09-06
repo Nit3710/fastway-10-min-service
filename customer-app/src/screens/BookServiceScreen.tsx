@@ -78,7 +78,7 @@ export const BookServiceScreen: React.FC = () => {
       };
 
       const saved = await AsyncStorage.getItem('fastway_service_bookings');
-      let bookings = [];
+      let bookings: any[] = [];
       if (saved) {
         bookings = JSON.parse(saved);
       }
@@ -331,6 +331,7 @@ const styles = StyleSheet.create({
     borderColor: THEME.colors.border,
     borderRadius: THEME.borderRadius.md,
     backgroundColor: '#FAF9F6',
+    maxWidth: '100%',
   },
   serviceChipActive: {
     backgroundColor: THEME.colors.graphite,
@@ -340,6 +341,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: THEME.colors.graphite,
+    flexShrink: 1,
   },
   serviceLabelActive: {
     color: '#FFF',
@@ -361,13 +363,14 @@ const styles = StyleSheet.create({
   },
   dateChip: {
     flex: 1,
-    height: 38,
+    height: 40,
     borderWidth: 1,
     borderColor: THEME.colors.border,
     borderRadius: THEME.borderRadius.sm,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FAF9F6',
+    paddingHorizontal: 4,
   },
   dateChipActive: {
     borderColor: THEME.colors.brass,
@@ -377,6 +380,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: THEME.colors.graphite,
+    textAlign: 'center',
   },
   dateChipTextActive: {
     color: THEME.colors.brass,
@@ -409,6 +413,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: THEME.colors.graphite,
+    flexShrink: 1,
   },
   slotTextActive: {
     color: THEME.colors.brass,
@@ -433,18 +438,23 @@ const styles = StyleSheet.create({
   submitBtn: {
     backgroundColor: THEME.colors.brass,
     height: 48,
+    width: '100%',
     borderRadius: THEME.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    paddingHorizontal: THEME.spacing.md,
     marginTop: THEME.spacing.sm,
     marginBottom: THEME.spacing.xl,
+    overflow: 'hidden',
   },
   submitBtnText: {
     color: '#FFF',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: 0.5,
+    flexShrink: 1,
+    textAlign: 'center',
   },
   confirmedContainer: {
     flex: 1,

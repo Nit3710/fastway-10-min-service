@@ -3,10 +3,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
+import { Platform, View, Image, Text } from 'react-native';
 import THEME from '../theme/theme';
 import { useCartStore } from '../store/cartStore';
 import useAuthStore from '../store/authStore';
+import { CONFIG } from '../api/apiClient';
 import { RootStackParamList } from '../types';
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -32,13 +33,27 @@ import TrackPlumberScreen from '../screens/TrackPlumberScreen';
 
 const Tab = createBottomTabNavigator<any>();
 
+const getAvatarUri = (pictureUrl?: string | null) => {
+  if (!pictureUrl) return null;
+  if (pictureUrl.startsWith('http://') || pictureUrl.startsWith('https://')) {
+    return pictureUrl;
+  }
+  return `${CONFIG.API_BASE_URL}${pictureUrl.startsWith('/') ? '' : '/'}${pictureUrl}`;
+};
+
 const TabNavigator: React.FC = () => {
   const insets = useSafeAreaInsets();
   const cartItems = useCartStore((s) => s.items);
+  const user = useAuthStore((s) => s.user);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 16) : Math.max(insets.bottom, 8);
   const tabHeight = 56 + bottomPadding;
+
+  const photoUri = getAvatarUri(user?.profilePictureUrl);
+  const initials = user?.name
+    ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '';
 
   return (
     <Tab.Navigator
@@ -106,9 +121,52 @@ const TabNavigator: React.FC = () => {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <Icon name={focused ? 'account' : 'account-outline'} size={24} color={color} />
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            if (photoUri) {
+              return (
+                <View
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 13,
+                    borderWidth: focused ? 2 : 1,
+                    borderColor: focused ? THEME.colors.brass : '#CBD5E1',
+                    overflow: 'hidden',
+                    backgroundColor: THEME.colors.surfaceRaised,
+                  }}
+                >
+                  <Image
+                    source={{ uri: photoUri }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                </View>
+              );
+            }
+
+            return (
+              <View
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 13,
+                  borderWidth: focused ? 2 : 1,
+                  borderColor: focused ? THEME.colors.brass : '#CBD5E1',
+                  backgroundColor: focused ? THEME.colors.brass : THEME.colors.surfaceRaised,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                {initials ? (
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: focused ? '#FFFFFF' : THEME.colors.graphite }}>
+                    {initials}
+                  </Text>
+                ) : (
+                  <Icon name={focused ? 'account' : 'account-outline'} size={16} color={focused ? '#FFFFFF' : color} />
+                )}
+              </View>
+            );
+          },
         }}
       />
     </Tab.Navigator>

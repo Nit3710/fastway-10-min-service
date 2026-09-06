@@ -899,6 +899,7 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.md,
     marginBottom: THEME.spacing.md,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   sectionTitle: { 
     fontSize: 14, 
@@ -909,7 +910,8 @@ const styles = StyleSheet.create({
   description: { 
     fontSize: 13, 
     color: THEME.colors.textSecondary, 
-    lineHeight: 18 
+    lineHeight: 20,
+    flexWrap: 'wrap',
   },
   sectionTitleRelated: { 
     fontSize: 14, 
@@ -1146,6 +1148,7 @@ const styles = StyleSheet.create({
   specTableRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
     paddingVertical: 6,
     borderBottomWidth: 0.5,
     borderBottomColor: THEME.colors.border,
@@ -1154,11 +1157,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: THEME.colors.textSecondary,
+    flex: 1,
+    marginRight: 8,
   },
   specColVal: {
     fontSize: 11,
     fontWeight: '700',
     color: THEME.colors.graphite,
+    flex: 1.5,
+    textAlign: 'right',
   },
   cadIntro: {
     fontSize: 10,

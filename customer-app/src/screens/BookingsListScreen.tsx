@@ -221,7 +221,7 @@ export const BookingsListScreen: React.FC = () => {
                   style={styles.invoiceBtn}
                 >
                   <Icon name="file-document-outline" size={15} color={THEME.colors.brass} style={{ marginRight: 4 }} />
-                  <Text style={styles.invoiceBtnText}>INVOICE & 7-DAY WARRANTY</Text>
+                  <Text style={styles.invoiceBtnText} numberOfLines={1}>VIEW INVOICE</Text>
                 </Pressable>
               </View>
 
@@ -464,6 +464,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: THEME.colors.graphite,
     letterSpacing: 0.3,
+    flexShrink: 1,
+    paddingHorizontal: 2,
   },
 });
 

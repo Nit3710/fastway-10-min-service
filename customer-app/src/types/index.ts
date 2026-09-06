@@ -101,6 +101,7 @@ export interface OrderItemResponse {
   productName: string;
   quantity: number;
   priceAtPurchase: number;
+  price?: number;
 }
 
 export interface OrderResponse {
@@ -119,6 +120,7 @@ export interface OrderResponse {
   couponCode?: string | null;
   loyaltyPointsEarned?: number;
   loyaltyPointsDeducted?: number;
+  deliveryOtp?: string;
 }
 
 export type RootStackParamList = {
