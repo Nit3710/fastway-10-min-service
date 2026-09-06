@@ -86,44 +86,52 @@ export default function DeliveryPartnersPage() {
             <h2 style={styles.modalTitle}>Add Delivery Partner</h2>
             {error && <div style={styles.errorBox}>{error}</div>}
             <form onSubmit={handleCreate} style={styles.form}>
-              <label style={styles.label}>Full Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Rider Rahul"
-                value={form.name}
-                onChange={e => setForm({ ...form, name: e.target.value })}
-                style={styles.input}
-              />
+              <div>
+                <label style={styles.label}>Full Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rider Rahul"
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  style={styles.input}
+                />
+              </div>
 
-              <label style={styles.label}>Phone Number (Required for Login)</label>
-              <input
-                type="tel"
-                placeholder="e.g. 9999999998"
-                value={form.phone}
-                onChange={e => setForm({ ...form, phone: e.target.value })}
-                style={styles.input}
-                required
-              />
+              <div>
+                <label style={styles.label}>Phone Number (Required for Login)</label>
+                <input
+                  type="tel"
+                  placeholder="e.g. 9999999998"
+                  value={form.phone}
+                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                  style={styles.input}
+                  required
+                />
+              </div>
 
-              <label style={styles.label}>Password (Default: 123456)</label>
-              <input
-                type="text"
-                placeholder="123456"
-                value={form.password}
-                onChange={e => setForm({ ...form, password: e.target.value })}
-                style={styles.input}
-              />
+              <div>
+                <label style={styles.label}>Password (Default: 123456)</label>
+                <input
+                  type="text"
+                  placeholder="123456"
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  style={styles.input}
+                />
+              </div>
 
-              <label style={styles.label}>Vehicle Type</label>
-              <select
-                value={form.vehicleType}
-                onChange={e => setForm({ ...form, vehicleType: e.target.value })}
-                style={styles.input}
-              >
-                <option value="Motorbike">Motorbike / Scooter</option>
-                <option value="Bicycle">Bicycle</option>
-                <option value="Auto">Auto / EV</option>
-              </select>
+              <div>
+                <label style={styles.label}>Vehicle Type</label>
+                <select
+                  value={form.vehicleType}
+                  onChange={e => setForm({ ...form, vehicleType: e.target.value })}
+                  style={styles.input}
+                >
+                  <option value="Motorbike">Motorbike / Scooter</option>
+                  <option value="Bicycle">Bicycle</option>
+                  <option value="Auto">Auto / EV</option>
+                </select>
+              </div>
 
               <div style={styles.modalActions}>
                 <button type="button" style={styles.cancelBtn} onClick={() => setShowModal(false)}>Cancel</button>
@@ -143,7 +151,7 @@ const styles = {
   page: { padding: '2rem' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' },
   title: { color: 'var(--text-primary)', fontSize: '1.5rem', fontWeight: 700, margin: 0 },
-  addBtn: { background: 'var(--accent-color, #E65100)', color: '#FFF', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '0.4rem', fontWeight: 700, cursor: 'pointer' },
+  addBtn: { background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '0.5rem', fontWeight: 600, cursor: 'pointer' },
   info: { color: 'var(--text-secondary)', padding: '1rem' },
   table: { width: '100%', borderCollapse: 'collapse', background: 'transparent' },
   th: { color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'left', padding: '0.75rem 1rem', borderBottom: '1px solid var(--border-color)' },
@@ -153,14 +161,14 @@ const styles = {
   badge: { background: 'var(--badge-default-bg)', color: 'var(--badge-default-text)', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.75rem' },
   dot: { display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%' },
   mapLink: { color: 'var(--accent-color)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 },
-  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  modalCard: { background: '#FFF', padding: '1.5rem', borderRadius: '0.5rem', width: '400px', maxWidth: '90%' },
-  modalTitle: { margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: 700 },
-  errorBox: { background: '#fee2e2', color: '#dc2626', padding: '0.5rem', borderRadius: '0.3rem', fontSize: '0.85rem', marginBottom: '1rem' },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+  modalCard: { background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '1rem', width: '420px', maxWidth: '90%', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+  modalTitle: { margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' },
+  errorBox: { background: '#fee2e2', color: '#dc2626', padding: '0.5rem 0.75rem', borderRadius: '0.4rem', fontSize: '0.85rem', marginBottom: '0.5rem' },
   form: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
-  label: { fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' },
-  input: { padding: '0.5rem 0.75rem', borderRadius: '0.4rem', border: '1px solid var(--border-color)', fontSize: '0.9rem' },
-  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' },
-  cancelBtn: { background: '#f3f4f6', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.4rem', cursor: 'pointer', fontWeight: 600 },
-  submitBtn: { background: 'var(--accent-color, #E65100)', color: '#FFF', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.4rem', cursor: 'pointer', fontWeight: 700 },
+  label: { fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' },
+  input: { width: '100%', padding: '0.6rem 0.75rem', borderRadius: '0.4rem', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.875rem', boxSizing: 'border-box' },
+  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' },
+  cancelBtn: { background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 },
+  submitBtn: { background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 },
 };
