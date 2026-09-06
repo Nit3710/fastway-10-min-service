@@ -11,15 +11,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 @Slf4j
-@ConditionalOnProperty(name = "firebase.enabled", havingValue = "true")
 public class FirebaseConfig {
+
+    @Value("${firebase.credentials.json:}")
+    private String credentialsJson;
 
     @Value("${firebase.credentials.path:}")
     private String credentialsPath;
@@ -30,17 +34,33 @@ public class FirebaseConfig {
     @Value("${firebase.storage.bucket:}")
     private String storageBucket;
 
+    private GoogleCredentials getGoogleCredentials() throws IOException {
+        if (credentialsJson != null && !credentialsJson.isBlank()) {
+            log.info("Loading Firebase credentials from FIREBASE_CREDENTIALS_JSON environment variable.");
+            try (InputStream is = new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8))) {
+                return GoogleCredentials.fromStream(is);
+            }
+        }
+        if (credentialsPath != null && !credentialsPath.isBlank()) {
+            log.info("Loading Firebase credentials from file path: {}", credentialsPath);
+            try (InputStream is = new FileInputStream(credentialsPath)) {
+                return GoogleCredentials.fromStream(is);
+            }
+        }
+        return null;
+    }
+
     @Bean
-    public FirebaseApp firebaseApp() throws IOException {
-        if (credentialsPath == null || credentialsPath.isBlank()) {
-            log.warn("Firebase credentials path is empty. Firebase features will be disabled.");
-            return null;
+    public FirebaseApp firebaseApp() {
+        if (!FirebaseApp.getApps().isEmpty()) {
+            return FirebaseApp.getInstance();
         }
 
-        if (FirebaseApp.getApps().isEmpty()) {
-            GoogleCredentials credentials;
-            try (FileInputStream input = new FileInputStream(credentialsPath)) {
-                credentials = GoogleCredentials.fromStream(input);
+        try {
+            GoogleCredentials credentials = getGoogleCredentials();
+            if (credentials == null) {
+                log.warn("Firebase credentials (JSON string or file path) not provided. Push notifications & Firebase will be disabled.");
+                return null;
             }
 
             FirebaseOptions.Builder builder = FirebaseOptions.builder()
@@ -54,10 +74,11 @@ public class FirebaseConfig {
             }
 
             FirebaseApp app = FirebaseApp.initializeApp(builder.build());
-            log.info("Firebase Application initialized successfully.");
+            log.info("Firebase Application initialized successfully for FCM push notifications.");
             return app;
-        } else {
-            return FirebaseApp.getInstance();
+        } catch (Exception ex) {
+            log.error("Failed to initialize Firebase App: {}", ex.getMessage(), ex);
+            return null;
         }
     }
 
@@ -79,12 +100,9 @@ public class FirebaseConfig {
 
     @Bean
     public Storage firebaseStorage() throws IOException {
-        if (credentialsPath == null || credentialsPath.isBlank()) {
+        GoogleCredentials credentials = getGoogleCredentials();
+        if (credentials == null) {
             return null;
-        }
-        GoogleCredentials credentials;
-        try (FileInputStream input = new FileInputStream(credentialsPath)) {
-            credentials = GoogleCredentials.fromStream(input);
         }
         return StorageOptions.newBuilder().setCredentials(credentials).build().getService();
     }
