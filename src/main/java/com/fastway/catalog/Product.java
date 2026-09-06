@@ -28,9 +28,8 @@ public class Product {
     @NotNull(message = "Category is required")
     private Category category;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brand_id", nullable = false)
-    @NotNull(message = "Brand is required")
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "brand_id", nullable = true)
     private Brand brand;
 
     @NotBlank(message = "Product name is required")

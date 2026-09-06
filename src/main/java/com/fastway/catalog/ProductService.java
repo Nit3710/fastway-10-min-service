@@ -86,8 +86,7 @@ public class ProductService {
             throw new IllegalArgumentException("Category is inactive");
         }
 
-        Brand brand = brandRepository.findById(request.getBrandId())
-                .orElseThrow(() -> new ResourceNotFoundException("Brand not found"));
+        Brand brand = resolveBrand(request.getBrandId());
 
         Product product = Product.builder()
                 .name(textSanitizer.clean(request.getName()))
@@ -126,8 +125,7 @@ public class ProductService {
             throw new IllegalArgumentException("Category is inactive");
         }
 
-        Brand brand = brandRepository.findById(request.getBrandId())
-                .orElseThrow(() -> new ResourceNotFoundException("Brand not found"));
+        Brand brand = resolveBrand(request.getBrandId());
 
         product.setName(textSanitizer.clean(request.getName()));
         product.setDescription(textSanitizer.clean(request.getDescription()));
@@ -142,6 +140,14 @@ public class ProductService {
 
         product = productRepository.save(product);
         return convertToResponse(product);
+    }
+
+    private Brand resolveBrand(Long brandId) {
+        if (brandId != null) {
+            return brandRepository.findById(brandId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Brand not found"));
+        }
+        return brandRepository.findAll().stream().findFirst().orElse(null);
     }
 
     @Transactional
@@ -172,7 +178,7 @@ public class ProductService {
                         .imageUrl(product.getCategory().getImageUrl())
                         .parentCategoryId(product.getCategory().getParentCategory() == null ? null : product.getCategory().getParentCategory().getId())
                         .build())
-                .brand(BrandResponse.builder()
+                .brand(product.getBrand() == null ? null : BrandResponse.builder()
                         .id(product.getBrand().getId())
                         .name(product.getBrand().getName())
                         .logoUrl(product.getBrand().getLogoUrl())
