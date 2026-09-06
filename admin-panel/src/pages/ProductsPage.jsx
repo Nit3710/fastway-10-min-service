@@ -87,7 +87,7 @@ export default function ProductsPage() {
     if (!String(form.sku || '').trim()) nextErrors.sku = 'SKU is required.';
     if (!String(form.unit || '').trim()) nextErrors.unit = 'Unit is required.';
     if (!form.categoryId) nextErrors.categoryId = 'Please select a category.';
-    if (!form.brandId) nextErrors.brandId = 'Please select a brand.';
+    // Brand is optional; if unselected, backend will receive null or default
     if (Object.keys(nextErrors).length > 0) { setErrors(nextErrors); return; }
 
     // If imageUrl is a blob (local preview), clear it before save — server won't accept blob URLs
@@ -229,13 +229,11 @@ export default function ProductsPage() {
               {errors.categoryId && <span style={styles.errorText}>{errors.categoryId}</span>}
             </div>
             <div>
-              <label style={styles.label}>Brand <span style={{ color: '#ef4444' }}>*</span></label>
-              <select style={{ ...styles.select, ...(errors.brandId ? styles.inputError : {}) }} value={form.brandId}
-                onChange={e => { f('brandId')(e); if (errors.brandId) setErrors(prev => ({ ...prev, brandId: '' })); }} required>
-                <option value="">Select brand</option>
+              <label style={styles.label}>Brand <span style={{ color: 'var(--text-muted)' }}>(Optional)</span></label>
+              <select style={styles.select} value={form.brandId} onChange={f('brandId')}>
+                <option value="">Generic / Unbranded (Default)</option>
                 {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
-              {errors.brandId && <span style={styles.errorText}>{errors.brandId}</span>}
             </div>
             <div>
               <label style={styles.label}>Active</label>
