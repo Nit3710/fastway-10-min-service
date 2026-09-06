@@ -34,7 +34,6 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('CUSTOMER');
   const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -87,7 +86,7 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
         phone,
         email: email.trim() || null,
         password,
-        role,
+        role: 'CUSTOMER' as UserRole,
       };
       const response = await apiSignup(payload);
       await setAuth(response.token, response.user, response.refreshToken);
@@ -105,11 +104,6 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const rolesList: { label: string; value: UserRole }[] = [
-    { label: 'Customer', value: 'CUSTOMER' },
-    { label: 'Delivery', value: 'DELIVERY_PARTNER' },
-    { label: 'Admin', value: 'ADMIN' },
-  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -184,34 +178,6 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
                 icon="lock-outline"
               />
 
-              <View style={styles.roleContainer}>
-                <Text style={styles.roleLabel}>I WANT TO REGISTER AS</Text>
-                <View style={styles.roleSelector}>
-                  {rolesList.map((item) => {
-                    const isSelected = role === item.value;
-                    return (
-                      <Pressable
-                        key={item.value}
-                        onPress={() => setRole(item.value)}
-                        style={[
-                          styles.roleOption,
-                          isSelected && styles.roleOptionSelected,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.roleOptionText,
-                            isSelected && styles.roleOptionTextSelected,
-                          ]}
-                        >
-                          {item.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </View>
-
               <Button
                 title="Create Account"
                 onPress={handleSignup}
@@ -282,44 +248,7 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.lg,
     borderWidth: 1,
   },
-  roleContainer: {
-    marginBottom: THEME.spacing.md,
-  },
-  roleLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
-    letterSpacing: 0.5,
-  },
-  roleSelector: {
-    flexDirection: 'row',
-    height: 40,
-    backgroundColor: THEME.colors.background,
-    borderRadius: THEME.borderRadius.md,
-    padding: 3,
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
-  },
-  roleOption: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: THEME.borderRadius.sm,
-  },
-  roleOptionSelected: {
-    backgroundColor: THEME.colors.surface,
-    ...THEME.shadows.light,
-  },
-  roleOptionText: {
-    fontSize: 12,
-    color: THEME.colors.textSecondary,
-    fontWeight: '700',
-  },
-  roleOptionTextSelected: {
-    color: THEME.colors.primary,
-    fontWeight: '800',
-  },
+
   button: {
     marginTop: THEME.spacing.sm,
   },
